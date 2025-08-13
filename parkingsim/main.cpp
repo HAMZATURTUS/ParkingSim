@@ -7,7 +7,7 @@
 #include "GLUTOutput.h"
 #include "GLUTCar.h"
 GLUTOutput* outputHandler = nullptr;
-GLUTCar* anycar = nullptr;
+GLUTCar* anycar = nullptr, *othercar = nullptr;
 
 float time = 0;
 
@@ -36,12 +36,20 @@ void display (void)
     glLoadIdentity();
 
     anycar->setColor(0.0f, 1.0f, 0.0);
-    std::string x = "angle " + std::to_string(anycar->getAngle());
-    outputHandler->output(-750, 450, x);
+    outputHandler->output(-750, 400, "position " + (anycar->getPosition()));
+    outputHandler->output(-750, 450, "angle " + std::to_string(anycar->getAngle()));
 
+    othercar->show();
     float newtime = glutGet(GLUT_ELAPSED_TIME);
     anycar->update(newtime - time);
     anycar->show();
+
+    
+
+    if (anycar->isColliding(othercar)) {
+        anycar->changeColor(0.0f, 1.0f, 0.0);
+    }
+    else anycar->changeColor(1.0f, 0.0f, 0.0f);
     
     time = newtime;
 
@@ -92,7 +100,10 @@ int main (int argc, char** argv) {
     outputHandler = new GLUTOutput();
 
     float fl[2] = {0.0, 0.0};
+    float fl2[2] = {0.0, -200.0};
     anycar = new GLUTCar(fl);
+    othercar = new GLUTCar(fl2, 0, 40);
+    othercar->changeColor(0.0f, 0.0f, 1.0f);
     
     // Giving name to window
     glutCreateWindow("OpenGL testing");

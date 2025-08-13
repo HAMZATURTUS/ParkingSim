@@ -6,8 +6,8 @@
 
 class GLUTCar {
 private:
-    int height = 100;
-    int width = 50;
+    float height = 100;
+    float width = 50;
 
     int tyre_height = 20;
     int tyre_width = 10;
@@ -16,7 +16,7 @@ private:
 
     float color[3]; // r g b
 
-    int angle; // this is for the direction of the car
+    float angle; // this is for the direction of the car
     float tyre_angle = 0; // i will make this value relative to the car. +angle means its pointing to the right. otherwise to the left. this value should not exceed [-50, 50]
     float max_tyre_angle = 50;
     float velocity = 0; // ill most likely use SI units for these and convert them to px later
@@ -24,17 +24,22 @@ private:
     float acceleration = 0;
     float max_acceleration = 1.5;
 
-    float meter_px = 3; // 100px = 4.5m
+    float meter_px = 100 / 4.5; // 100px = 4.5m
 
     //position
     float position_fl[2]; // [x1, y1]
     
 
 public:
-    GLUTCar(float fl[2], int angle = 0, float r = 1, float g = 0, float b = 0) {
+    GLUTCar(float fl[2], float angle = 0, float tyre_angle = 0, float r = 1, float g = 0, float b = 0) {
+
 
         color[0] = r; color[1] = g; color[2] = b;
         this->angle = angle;
+        
+        if (tyre_angle > max_tyre_angle) tyre_angle = max_tyre_angle;
+        if (tyre_angle < -max_tyre_angle) tyre_angle = -max_tyre_angle;
+        this->tyre_angle = tyre_angle;
 
         position_fl[0] = fl[0]; position_fl[1] = fl[1];
 
@@ -126,9 +131,9 @@ public:
             glTranslatef(-pivotX, -pivotY, 0.0f);
 
             // Now draw all parts in their current local rotations
-            draw_body();
             draw_tyres();
-            draw_axes();
+            draw_body();
+            //draw_axes();
 
         glPopMatrix();
     }
@@ -156,6 +161,7 @@ public:
             else if(tyre_angle < -1){
                 tyre_angle += ret;
             }
+            else tyre_angle = 0;
         }
     }
 
@@ -195,7 +201,12 @@ public:
 
     void update(float time) {
 
-        velocity += meter_px * acceleration * time / 100;
+        time /= 1000;
+        if (time > 0.004f) time = 0.004;
+
+        //printf("%f\n", time); 
+
+        velocity += meter_px * acceleration * time;
 
         if (velocity > 0) {
             velocity = std::min(velocity, max_velocity);
@@ -204,8 +215,13 @@ public:
             velocity = std::max(velocity, -max_velocity / 2);
         }
 
-        float dist = meter_px * velocity * time / 100;
-        float addx = dist * std::sin(angle * M_PI / 180);
+        angle += velocity / 6 * tyre_angle * time;
+        
+        if(angle > 360) angle -= 360;
+        if (angle < -360) angle += 360;
+
+        float dist = meter_px * velocity * time;
+        float addx = -dist * std::sin(angle * M_PI / 180);
         float addy = dist * std::cos(angle * M_PI / 180);
 
         position_fl[0] += addx;
@@ -217,6 +233,89 @@ public:
         return angle;
     }
 
+    std::string getPosition() {
+        return std::to_string(position_fl[0]) + " " + std::to_string(position_fl[1]);
+    }
+
+    void getCorners(float corners[4][2]) {
+        float rad = angle * M_PI / 180.0f;
+
+        // Center of rotation (rear line center)
+        float pivotX = position_fl[0] + width / 2.0f;
+        float pivotY = position_fl[1] - (height - tyre_position);
+
+        float local[4][2] = {
+            {0, 0},            // bottom-left
+            {width, 0},        // bottom-right
+            {width, -height},  // top-right
+            {0, -height}       // top-left
+        };
+
+        for(int i = 0; i < 4; i++) {
+            float lx = local[i][0] - width/2.0f;   // translate to pivot
+            float ly = local[i][1] + (height - tyre_position);
+
+            // rotate
+            corners[i][0] = pivotX + lx * cos(rad) - ly * sin(rad);
+            corners[i][1] = pivotY + lx * sin(rad) + ly * cos(rad);
+        }
+    }
+
+    // Check collision with another car
+    bool isColliding(GLUTCar* other) {
+        float cornersA[4][2], cornersB[4][2];
+        getCorners(cornersA);
+        other->getCorners(cornersB);
+
+        float axes[4][2];
+
+        // 2 axes from this car (edges 0-1 and 1-2)
+        for(int i=0;i<2;i++){
+            float dx = cornersA[i+1][0] - cornersA[i][0];
+            float dy = cornersA[i+1][1] - cornersA[i][1];
+            // perpendicular
+            axes[i][0] = -dy;
+            axes[i][1] = dx;
+        }
+
+        // 2 axes from other car (edges 0-1 and 1-2)
+        for(int i=0;i<2;i++){
+            float dx = cornersB[i+1][0] - cornersB[i][0];
+            float dy = cornersB[i+1][1] - cornersB[i][1];
+            axes[i+2][0] = -dy;
+            axes[i+2][1] = dx;
+        }
+
+        // Normalize axes
+        for(int i=0;i<4;i++){
+            float len = sqrt(axes[i][0]*axes[i][0] + axes[i][1]*axes[i][1]);
+            axes[i][0] /= len;
+            axes[i][1] /= len;
+        }
+
+        // SAT check
+        for(int i=0;i<4;i++){
+            float minA=1e9,maxA=-1e9;
+            float minB=1e9,maxB=-1e9;
+
+            for(int j=0;j<4;j++){
+                float proj = cornersA[j][0]*axes[i][0] + cornersA[j][1]*axes[i][1];
+                minA = std::min(minA, proj);
+                maxA = std::max(maxA, proj);
+
+                proj = cornersB[j][0]*axes[i][0] + cornersB[j][1]*axes[i][1];
+                minB = std::min(minB, proj);
+                maxB = std::max(maxB, proj);
+            }
+
+            // No overlap on this axis → no collision
+            if(maxA < minB || maxB < minA)
+                return false;
+        }
+
+        // All axes overlap → collision
+        return true;
+    }
 };
 
 #endif 
