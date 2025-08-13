@@ -1,6 +1,3 @@
-// C program to demonstrate
-// drawing a circle using
-// OpenGL
 #include <stdio.h>
 #include <GL/glut.h>
 #include <math.h>
@@ -17,14 +14,12 @@ float time = 0;
 // function to initialize
 void myInit (void)
 {
-    // making background color black as first 
-    // 3 arguments all are 0.0
-    glClearColor(1.0, 1.0, 1.0, 1.0);
     
-    // making picture color green (in RGB mode), as middle argument is 1.0
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+
     glColor3f(0.0, 1.0, 0.0);
     
-    // breadth of picture boundary is 1 pixel
+    
     glPointSize(1.0);
     glMatrixMode(GL_PROJECTION); 
     glLoadIdentity();
@@ -39,23 +34,6 @@ void display (void)
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    /*
-    // Rectangle dimensions
-    float width = 100.0f;
-    float height = 50.0f;
-
-    // Translate to the center of the rectangle
-    glTranslatef(width/2.0f, height/2.0f, 0.0f);
-    
-    i++;
-    // Rotate around the center
-    glRotatef(-i / 10, 0.0f, 0.0f, 1.0f); 
-    
-    // Draw rectangle shifted back by half its width and height
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glRectf(-width/2.0f, -height/2.0f, width/2.0f, height/2.0f);
-    */
 
     anycar->setColor(0.0f, 1.0f, 0.0);
     std::string x = "angle " + std::to_string(anycar->getAngle());
