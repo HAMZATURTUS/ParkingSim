@@ -242,13 +242,20 @@ public:
         if(single_pressed('Q')){
             player->switch_gear(0);
         }
-
         if(single_pressed('E')){
             player->switch_gear(1);
         }
-
         if(single_pressed('H')){
             text_hidden = !text_hidden;
+        }
+        if(single_pressed('Z')){
+            player->enable_blinker_left();
+        }
+        if(single_pressed('C')){
+            player->enable_blinker_right();
+        }
+        if(single_pressed('X')){
+            player->hazards();
         }
 
         glutPostRedisplay(); 

@@ -38,6 +38,11 @@ protected:
     bool lights_on = false;
     bool reverse = false;
 
+    bool blinker_left[2] = { false }; // [is the blinker on, is the light on at this second]
+    bool blinker_right[2] = { false };
+    float blinker_time = 0;
+    float max_blinker_time = 400; // how many miliseconds should the light stay on
+
     //position
     float position_fl[2]; // [x1, y1]
     
@@ -105,6 +110,37 @@ public:
         if (speed == 0){
             x = !x;
             reverse = x;
+        }
+    }
+
+    void enable_blinker_left() {
+        blinker_time = 0;
+
+        if(blinker_left[0] + blinker_right[0] < 2) blinker_left[0] = !blinker_left[0];
+        else blinker_left[0] = true;
+        blinker_left[1] = blinker_left[0];
+        blinker_right[0] = false; blinker_right[1] = false;
+    }
+
+    void enable_blinker_right() {
+        blinker_time = 0;
+
+        if(blinker_left[0] + blinker_right[0] < 2) blinker_right[0] = !blinker_right[0];
+        else blinker_right[0] = true;
+        blinker_right[1] = blinker_right[0];
+        blinker_left[0] = false; blinker_left[1] = false;
+    }
+
+    void hazards() {
+        blinker_time = 0;
+        
+        if(blinker_left[0] + blinker_right[0] < 2){
+            blinker_right[0] = true; blinker_right[1] = true;
+            blinker_left[0] = true; blinker_left[1] = true;
+        }
+        else{
+            blinker_right[0] = false; blinker_right[1] = false;
+            blinker_left[0] = false; blinker_left[1] = false;
         }
     }
 
@@ -179,45 +215,83 @@ public:
 
     virtual void draw_windows() = 0;
 
+    void draw_light_fl(float side_padding, float light_height, float light_width) {
+        float fronty = position_fl[1];
+        float frontx = position_fl[0] + side_padding;
+        glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+    }
+    void draw_light_fr(float side_padding, float light_height, float light_width) {
+        float fronty = position_fl[1];
+        float frontx = position_fl[0] + width - side_padding - light_width;
+        glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+    }
+    void draw_light_rl(float side_padding, float light_height, float light_width) {
+        float fronty = position_fl[1] - height + light_height;
+        float frontx = position_fl[0] + side_padding;
+        glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+    }
+    void draw_light_rr(float side_padding, float light_height, float light_width) {
+        float fronty = position_fl[1] - height + light_height;
+        float frontx = position_fl[0] + width - side_padding - light_width;
+        glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+    }
+
     void draw_lights() {
         
         float side_padding = 3;
+        float light_height = 5;
+        float light_width = 15;
 
         // headlights
         {
-            float light_height = 5;
-            float light_width = 15;
             setColor(0.9f, 0.9f, 0.1f);
             {
-                float fronty = position_fl[1];
-                float frontx = position_fl[0] + side_padding;
-                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+                draw_light_fl(side_padding, light_height, light_width);
             }
 
             {
-                float fronty = position_fl[1];
-                float frontx = position_fl[0] + width - side_padding - light_width;
-                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+                draw_light_fr(side_padding, light_height, light_width);
             }
         }
 
         // taillights
         {
-            float light_height = 5;
-            float light_width = 15;
-            if(reverse) setColor(1.0f, 1.0f, 1.0f);
-            else if(brakes_on) setColor(1.0f, 0.0f, 0.0f);
+            if(brakes_on) setColor(1.0f, 0.0f, 0.0f);
             else setColor(0.7f, 0.2f, 0.2f);
             {
-                float fronty = position_fl[1] - height + light_height;
-                float frontx = position_fl[0] + side_padding;
-                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+                draw_light_rl(side_padding, light_height, light_width);
             }
 
             {
-                float fronty = position_fl[1] - height + light_height;
-                float frontx = position_fl[0] + width - side_padding - light_width;
-                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+                draw_light_rr(side_padding, light_height, light_width);
+            }
+
+            if(reverse) {
+                setColor(1.0f, 1.0f, 1.0f);
+                float light_w = light_width / 2;
+                {
+                    draw_light_rl(side_padding, light_height, light_w);
+                }
+
+                {
+                    draw_light_rr(side_padding, light_height, light_w);
+                }
+            }
+
+        }
+
+        // blinkers
+        if(blinker_left[1] + blinker_right[1]) {
+            setColor(1.0f, 0.5f, 0.0f);
+            if(blinker_left[1]){
+                float light_w = light_width / 3;
+                draw_light_fl(side_padding, light_height, light_w);
+                draw_light_rl(side_padding, light_height, light_w);
+            }
+            if(blinker_right[1]){
+                float light_w = light_width / 3;
+                draw_light_fr(side_padding, light_height, light_w);
+                draw_light_rr(side_padding, light_height, light_w);
             }
         }
 
@@ -300,7 +374,7 @@ public:
             speed = 0;
         }
 
-        if(acceleration < 0) press_brakes();
+        if(acceleration * speed < 0) press_brakes();
 
     }
 
@@ -323,8 +397,23 @@ public:
 
     void update(float time) {
 
+        
+        if(blinker_left[0] + blinker_right[0]) {
+            blinker_time += time;
+            if(blinker_time > max_blinker_time){
+                blinker_time = 0;
+                if(blinker_left[0]){
+                    blinker_left[1] = !blinker_left[1];
+                }
+                if(blinker_right[0]){
+                    blinker_right[1] = !blinker_right[1];
+                }
+            }
+        }
+
         time /= 1000;
         if (time > 0.004f) time = 0.004;
+
 
         //printf("%f\n", time); 
 
