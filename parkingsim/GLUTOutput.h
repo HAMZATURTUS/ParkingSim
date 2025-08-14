@@ -18,7 +18,7 @@ private:
     std::string message;
 
 public:
-    GLUTOutput() {
+    GLUTOutput(int x = 3) {
         // Initialize fonts
         fonts[0] = GLUT_BITMAP_8_BY_13;
         fonts[1] = GLUT_BITMAP_9_BY_15;
@@ -30,7 +30,7 @@ public:
 
         
         // Default font and message
-        font = fonts[3];
+        font = fonts[x];
         message = "GLUT means OpenGL.";
     }
 

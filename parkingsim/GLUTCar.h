@@ -7,17 +7,19 @@
 class GLUTCar {
 
 private:
-    float color_choices[3][3] = {{0.4, 0.4, 0.4}, {0.3, 0.7, 0.3}, {0.3, 0.3, 0.7}};
+    float color_choices[4][3] = {{0.4, 0.4, 0.4}, {0.3, 0.7, 0.3}, {0.3, 0.3, 0.7}, {0.7, 0.3, 0.3}};
 
 protected:
     float height = 100;
     float width = 50;
+    float weight = 1500; //kg
 
     int tyre_height = 20;
     int tyre_width = 10;
     int tyre_offset = 0;
     int tyre_position = 15; // how far off the front of the car is the tyre's center?
     int rear_tyre_position = 15;
+    float wheelbase = height - tyre_position - rear_tyre_position;
 
     float color[3]; // r g b
     float original_color[3];
@@ -25,12 +27,12 @@ protected:
     float angle; // this is for the direction of the car
     float tyre_angle = 0; // i will make this value relative to the car. +angle means its pointing to the right. otherwise to the left. this value should not exceed [-45, 45]
     float max_tyre_angle = 45;
-    float velocity = 0; // ill most likely use SI units for these and convert them to px later
-    float max_velocity = 20;
+    float speed = 0; // ill most likely use SI units for these and convert them to px later
+    float max_speed = 20;
     float acceleration = 0;
     float max_acceleration = 1.5;
 
-    float meter_px = 100 / 4.5; // 100px = 4.5m
+    float meter_px = 100.0f / 4.5; // 100px = 4.5m
 
     bool brakes_on = false;
     bool lights_on = false;
@@ -68,8 +70,11 @@ public:
         tyre_position = x;
         rear_tyre_position = y;
     }
-    float getVelocity() {
-        return velocity;
+    void setWeight(float x){
+        weight = x;
+    }
+    float getSpeed() {
+        return speed;
     }
 
     void changeColor(float r, float g, float b) {
@@ -97,9 +102,10 @@ public:
     }
 
     void switch_gear(bool x) { // 1 for drive
-        if (velocity == 0)
-        x = !x;
-        reverse = x;
+        if (speed == 0){
+            x = !x;
+            reverse = x;
+        }
     }
 
     void draw_axes() {
@@ -165,6 +171,10 @@ public:
         float rry = rly;
         glRectf(rrx, rry, rrx + tyre_width, rry - tyre_height);
 
+    }
+
+    void set_window_color() {
+        setColor(0.1f, 0.1f, 0.3f);
     }
 
     virtual void draw_windows() = 0;
@@ -249,8 +259,8 @@ public:
 
     void steer() {
 
-        float ret = abs(velocity / 100);
-        if (velocity != 0){
+        float ret = abs(speed / 100);
+        if (speed != 0){
             if(tyre_angle > 1){
                 tyre_angle -= ret;
             }
@@ -279,15 +289,15 @@ public:
 
         float loss = 0.5;
 
-        if (velocity > loss){
+        if (speed > loss){
             acceleration = -loss;
         }
-        else if(velocity < -loss){
+        else if(speed < -loss){
             acceleration = loss;
         }
         else{
             acceleration = 0;
-            velocity = 0;
+            speed = 0;
         }
 
         if(acceleration < 0) press_brakes();
@@ -300,8 +310,8 @@ public:
             press_brakes();
             acceleration = max_acceleration * x;
             
-            if(velocity < 0) acceleration *= -1;
-            else if(velocity == 0) acceleration = 0;
+            if(speed < 0) acceleration *= -1;
+            else if(speed == 0) acceleration = 0;
             return;
         }
         else release_brakes();
@@ -318,23 +328,23 @@ public:
 
         //printf("%f\n", time); 
 
-        velocity += meter_px * acceleration * time;
+        speed += meter_px * acceleration * time;
 
-        if (velocity >= 0) {
-            velocity = std::min(velocity, max_velocity);
+        if (speed >= 0) {
+            speed = std::min(speed, max_speed);
         }
-        else if(velocity < 0){
-            velocity = std::max(velocity, -max_velocity / 2);
+        else if(speed < 0){
+            speed = std::max(speed, -max_speed / 2);
         }
 
-        if(abs(velocity) < 0.1) velocity = 0;
+        if(abs(speed) < 0.1) speed = 0;
 
-        angle += velocity / 6 * -tyre_angle * 1.1 * time;
+        angle += speed / 6 * -tyre_angle * 1.1 * time;
         
         if(angle > 360) angle -= 360;
         if (angle < -360) angle += 360;
 
-        float dist = meter_px * velocity * time;
+        float dist = meter_px * speed * time;
         float addx = -dist * std::sin(angle * M_PI / 180);
         float addy = dist * std::cos(angle * M_PI / 180);
 
