@@ -15,8 +15,6 @@ public:
         setHeight(110);
         setTyreposition(15, 20);
     }
-
-
     
 
     void draw_windows() {

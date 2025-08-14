@@ -68,6 +68,9 @@ public:
         tyre_position = x;
         rear_tyre_position = y;
     }
+    float getVelocity() {
+        return velocity;
+    }
 
     void changeColor(float r, float g, float b) {
         color[0] = r; color[1] = g; color[2] = b;
@@ -91,6 +94,12 @@ public:
 
     void release_brakes() {
         brakes_on = false;
+    }
+
+    void switch_gear(bool x) { // 1 for drive
+        if (velocity == 0)
+        x = !x;
+        reverse = x;
     }
 
     void draw_axes() {
@@ -158,24 +167,7 @@ public:
 
     }
 
-    virtual void draw_windows() {
-        
-        {
-            float side_padding = 5;
-            float window_height = 20;
-            float fronty = position_fl[1] - 25;
-            setColor(0.1f, 0.1f, 0.3f);
-            glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
-        }
-
-        {
-            float side_padding = 5;
-            float window_height = 15;
-            float fronty = position_fl[1] - 70;
-            setColor(0.1f, 0.1f, 0.3f);
-            glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
-        }
-    }
+    virtual void draw_windows() = 0;
 
     void draw_lights() {
         
@@ -297,16 +289,25 @@ public:
             acceleration = 0;
             velocity = 0;
         }
+
+        if(acceleration < 0) press_brakes();
+
     }
 
     void accelerate(float x){
 
         if(x < 0){
             press_brakes();
+            acceleration = max_acceleration * x;
+            
+            if(velocity < 0) acceleration *= -1;
+            else if(velocity == 0) acceleration = 0;
+            return;
         }
         else release_brakes();
 
-        acceleration = max_acceleration * x;
+        if (reverse) acceleration = max_acceleration * -x;
+        else acceleration = max_acceleration * x;
 
     }
 
@@ -321,12 +322,12 @@ public:
 
         if (velocity >= 0) {
             velocity = std::min(velocity, max_velocity);
-            reverse = false;
         }
         else if(velocity < 0){
             velocity = std::max(velocity, -max_velocity / 2);
-            reverse = true;
         }
+
+        if(abs(velocity) < 0.1) velocity = 0;
 
         angle += velocity / 6 * -tyre_angle * 1.1 * time;
         

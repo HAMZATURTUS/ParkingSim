@@ -8,11 +8,13 @@
 #include "GLUTCar.h"
 #include "GLUTVan.h"
 #include "GLUTSuv.h"
+#include "GLUTSedan.h"
 GLUTOutput* outputHandler = nullptr;
 GLUTCar* anycar = nullptr;
 GLUTCar* othercars[2];
 
 float time = 0;
+bool hidden = false;
 
 // function to initialize
 void myInit (void)
@@ -38,9 +40,19 @@ void display (void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    anycar->setColor(0.0f, 1.0f, 0.0);
-    outputHandler->output(-750, 400, "position " + (anycar->getPosition()));
-    outputHandler->output(-750, 450, "angle " + std::to_string(anycar->getAngle()));
+    if(hidden == false){
+        anycar->setColor(0.0f, 0.0f, 0.0);
+
+        outputHandler->output(-750, 450, "WASD to control the car");
+        outputHandler->output(-750, 420, "Q to reverse");
+        outputHandler->output(-750, 390, "E to drive");
+        outputHandler->output(-750, 360, "H to hide");
+
+        int start = 330;
+        outputHandler->output(-750, start, "position " + (anycar->getPosition()));
+        outputHandler->output(-750, start - 30, "angle " + std::to_string(anycar->getAngle()));
+        outputHandler->output(-750, start - 30 * 2, "velocity " + std::to_string(anycar->getVelocity()));
+    }
 
     for(GLUTCar* car : othercars){
         car->show();
@@ -77,6 +89,18 @@ void keyUp(unsigned char key, int x, int y) {
     keyStates[key] = false;
 }
 
+bool pressedLastFrame[26];
+
+bool single_pressed(char x) {
+    bool ret = false;
+    bool CurrentlyPressed = keyStates[x + 32] || keyStates[x];
+    if (CurrentlyPressed && !pressedLastFrame[x - 'A']) { // this extra stuff should prevent the weird behaviour when q is held down for more than 0.1 seconds
+        ret = true;
+    }
+    pressedLastFrame[x - 'A'] = CurrentlyPressed;
+    return ret;
+}
+
 void update(void) {
 
     if (keyStates['a'] || keyStates['A']) {
@@ -95,6 +119,19 @@ void update(void) {
     }
     else anycar->accelerate();
 
+    
+    if(single_pressed('Q')){
+        anycar->switch_gear(0);
+    }
+
+    if(single_pressed('E')){
+        anycar->switch_gear(1);
+    }
+
+    if(single_pressed('H')){
+        hidden = !hidden;
+    }
+
     glutPostRedisplay(); 
 }
 
@@ -108,10 +145,15 @@ int main (int argc, char** argv) {
     glutInitWindowSize(1400, 800);
     glutInitWindowPosition(0, 0);
 
+    for(int i = 0; i < 26; i++){
+        pressedLastFrame[i] = false;
+    }
+
     outputHandler = new GLUTOutput();
+    outputHandler->selectFont(6);
 
     float fl[2] = {0.0, 0.0};
-    anycar = new GLUTCar(fl);
+    anycar = new GLUTSedan(fl);
     fl[0] = 0.0; fl[1] = -200.0;
 
     othercars[0] = new GLUTVan(fl, 0, 40, 1);
