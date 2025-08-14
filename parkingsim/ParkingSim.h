@@ -134,15 +134,30 @@ public:
         if(text_hidden == false){
             player->setColor(0.0f, 0.0f, 0.0);
 
-            outputHandler->output(-750, 450, "WASD to control the car");
-            outputHandler->output(-750, 420, "Q to reverse");
-            outputHandler->output(-750, 390, "E to drive");
-            outputHandler->output(-750, 360, "H to hide");
+            std::string messages[7] = {
+                "WASD to control the car",
+                "Q to reverse",
+                "E to drive",
+                "Z for left blinker",
+                "C for right blinker",
+                "X for hazards",
+                "H to hide"
+            };
+            float start = 450;
+            for(std::string& message : messages){
+                outputHandler->output(-750, start, message);
+                start -= 30;
+            }
 
-            int start = 330;
-            outputHandler->output(-750, start, "position " + (player->getPosition()));
-            outputHandler->output(-750, start - 30, "angle " + std::to_string(player->getAngle()));
-            outputHandler->output(-750, start - 30 * 2, "speed " + std::to_string(player->getSpeed()));
+            std::string infos[3] = {
+                "position " + (player->getPosition()),
+                "angle " + std::to_string(player->getAngle()),
+                "speed " + std::to_string(player->getSpeed())
+            };
+            for(std::string& info : infos){
+                outputHandler->output(-750, start, info);
+                start -= 30;
+            }
         }
     }
 
