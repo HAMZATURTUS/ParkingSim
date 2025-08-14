@@ -59,7 +59,7 @@ void display (void)
         if(problem){
             anycar->changeColor(0.0f, 1.0f, 0.0);
         }
-        else anycar->changeColor(1.0f, 0.0f, 0.0f);
+        else anycar->returnColor();
     }
         
     time = newtime;
@@ -114,12 +114,10 @@ int main (int argc, char** argv) {
     anycar = new GLUTCar(fl);
     fl[0] = 0.0; fl[1] = -200.0;
 
-    othercars[0] = new GLUTVan(fl, 0, 40);
-    othercars[0]->changeColor(0.2f, 0.7f, 0.2f);
+    othercars[0] = new GLUTVan(fl, 0, 40, 1);
 
     fl[0] = 70.0; fl[1] = -200.0;
-    othercars[1] = new GLUTSuv(fl, 0, -20);
-    othercars[1]->changeColor(0.7f, 0.2f, 0.2f);
+    othercars[1] = new GLUTSuv(fl, 0, -20, 2);
     
     // Giving name to window
     glutCreateWindow("OpenGL testing");

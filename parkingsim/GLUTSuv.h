@@ -11,21 +11,19 @@ private:
     
 
 public:
-    GLUTSuv(float fl[2], float angle = 0, float tyre_angle = 0, float r = 1, float g = 0, float b = 0) : GLUTCar(fl, angle, tyre_angle, r, g, b) {
-        
+    GLUTSuv(float fl[2], float angle = 0, float tyre_angle = 0, int color_choice = 0) : GLUTCar(fl, angle, tyre_angle, color_choice) {
+        setHeight(105);
     }
 
 
     
 
-    void draw_body() {
-        setColor();
-        glRectf(position_fl[0], position_fl[1], position_fl[0] + width, position_fl[1] - height);
+    void draw_windows() {
 
         {
             float side_padding = 5;
-            float window_height = 20;
-            float fronty = position_fl[1] - 25;
+            float window_height = 15;
+            float fronty = position_fl[1] - (5 + window_height);
             setColor(0.1f, 0.1f, 0.3f);
             glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
         }
@@ -33,7 +31,7 @@ public:
         {
             float side_padding = 5;
             float window_height = 10;
-            float fronty = position_fl[1] - 85;
+            float fronty = position_fl[1] - 90;
             setColor(0.1f, 0.1f, 0.3f);
             glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
         }

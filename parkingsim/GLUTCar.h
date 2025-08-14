@@ -5,6 +5,10 @@
 #include <cmath>
 
 class GLUTCar {
+
+private:
+    float color_choices[3][3] = {{0.4, 0.4, 0.4}, {0.3, 0.7, 0.3}, {0.3, 0.3, 0.7}};
+
 protected:
     float height = 100;
     float width = 50;
@@ -16,10 +20,11 @@ protected:
     int rear_tyre_position = 15;
 
     float color[3]; // r g b
+    float original_color[3];
 
     float angle; // this is for the direction of the car
-    float tyre_angle = 0; // i will make this value relative to the car. +angle means its pointing to the right. otherwise to the left. this value should not exceed [-50, 50]
-    float max_tyre_angle = 50;
+    float tyre_angle = 0; // i will make this value relative to the car. +angle means its pointing to the right. otherwise to the left. this value should not exceed [-45, 45]
+    float max_tyre_angle = 45;
     float velocity = 0; // ill most likely use SI units for these and convert them to px later
     float max_velocity = 20;
     float acceleration = 0;
@@ -27,15 +32,22 @@ protected:
 
     float meter_px = 100 / 4.5; // 100px = 4.5m
 
+    bool brakes_on = false;
+    bool lights_on = false;
+    bool reverse = false;
+
     //position
     float position_fl[2]; // [x1, y1]
     
 
 public:
-    GLUTCar(float fl[2], float angle = 0, float tyre_angle = 0, float r = 1, float g = 0, float b = 0) {
+    GLUTCar(float fl[2], float angle = 0, float tyre_angle = 0, int color_choice = 0) {
 
+        for(int i = 0; i < 3; i++){
+            color[i] = color_choices[color_choice][i];
+            original_color[i] = color_choices[color_choice][i];
+        }
 
-        color[0] = r; color[1] = g; color[2] = b;
         this->angle = angle;
         
         if (tyre_angle > max_tyre_angle) tyre_angle = max_tyre_angle;
@@ -61,12 +73,24 @@ public:
         color[0] = r; color[1] = g; color[2] = b;
     }
 
+    void returnColor() {
+        color[0] = original_color[0]; color[1] = original_color[1]; color[2] = original_color[2];
+    }
+
     void setColor() {
         glColor3f(color[0], color[1], color[2]);
     }
 
     void setColor(float r, float g, float b) {
         glColor3f(r, g, b);
+    }
+
+    void press_brakes() {
+        brakes_on = true;
+    }
+
+    void release_brakes() {
+        brakes_on = false;
     }
 
     void draw_axes() {
@@ -134,10 +158,8 @@ public:
 
     }
 
-    virtual void draw_body() {
-        setColor();
-        glRectf(position_fl[0], position_fl[1], position_fl[0] + width, position_fl[1] - height);
-
+    virtual void draw_windows() {
+        
         {
             float side_padding = 5;
             float window_height = 20;
@@ -153,6 +175,59 @@ public:
             setColor(0.1f, 0.1f, 0.3f);
             glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
         }
+    }
+
+    void draw_lights() {
+        
+        float side_padding = 3;
+
+        // headlights
+        {
+            float light_height = 5;
+            float light_width = 15;
+            setColor(0.9f, 0.9f, 0.1f);
+            {
+                float fronty = position_fl[1];
+                float frontx = position_fl[0] + side_padding;
+                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+            }
+
+            {
+                float fronty = position_fl[1];
+                float frontx = position_fl[0] + width - side_padding - light_width;
+                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+            }
+        }
+
+        // taillights
+        {
+            float light_height = 5;
+            float light_width = 15;
+            if(reverse) setColor(1.0f, 1.0f, 1.0f);
+            else if(brakes_on) setColor(1.0f, 0.0f, 0.0f);
+            else setColor(0.7f, 0.2f, 0.2f);
+            {
+                float fronty = position_fl[1] - height + light_height;
+                float frontx = position_fl[0] + side_padding;
+                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+            }
+
+            {
+                float fronty = position_fl[1] - height + light_height;
+                float frontx = position_fl[0] + width - side_padding - light_width;
+                glRectf(frontx, fronty, frontx + light_width, fronty - light_height);
+            }
+        }
+
+    }
+
+    void draw_body() {
+        setColor();
+        glRectf(position_fl[0], position_fl[1], position_fl[0] + width, position_fl[1] - height);
+
+        draw_windows();
+        draw_lights();
+
     }
 
     void show() {
@@ -182,7 +257,7 @@ public:
 
     void steer() {
 
-        float ret = abs(velocity / 50);
+        float ret = abs(velocity / 100);
         if (velocity != 0){
             if(tyre_angle > 1){
                 tyre_angle -= ret;
@@ -208,6 +283,8 @@ public:
 
     void accelerate() {
 
+        release_brakes();
+
         float loss = 0.5;
 
         if (velocity > loss){
@@ -224,6 +301,11 @@ public:
 
     void accelerate(float x){
 
+        if(x < 0){
+            press_brakes();
+        }
+        else release_brakes();
+
         acceleration = max_acceleration * x;
 
     }
@@ -237,14 +319,16 @@ public:
 
         velocity += meter_px * acceleration * time;
 
-        if (velocity > 0) {
+        if (velocity >= 0) {
             velocity = std::min(velocity, max_velocity);
+            reverse = false;
         }
         else if(velocity < 0){
             velocity = std::max(velocity, -max_velocity / 2);
+            reverse = true;
         }
 
-        angle += velocity / 6 * -tyre_angle * time;
+        angle += velocity / 6 * -tyre_angle * 1.1 * time;
         
         if(angle > 360) angle -= 360;
         if (angle < -360) angle += 360;
