@@ -5,7 +5,7 @@
 #include <cmath>
 
 class GLUTCar {
-private:
+protected:
     float height = 100;
     float width = 50;
 
@@ -13,6 +13,7 @@ private:
     int tyre_width = 10;
     int tyre_offset = 0;
     int tyre_position = 15; // how far off the front of the car is the tyre's center?
+    int rear_tyre_position = 15;
 
     float color[3]; // r g b
 
@@ -45,6 +46,29 @@ public:
 
     }
 
+    void setHeight(float x){
+        height = x;
+    }
+    void setWidth(float x){
+        width = x;
+    }
+    void setTyreposition(float x, float y){
+        tyre_position = x;
+        rear_tyre_position = y;
+    }
+
+    void changeColor(float r, float g, float b) {
+        color[0] = r; color[1] = g; color[2] = b;
+    }
+
+    void setColor() {
+        glColor3f(color[0], color[1], color[2]);
+    }
+
+    void setColor(float r, float g, float b) {
+        glColor3f(r, g, b);
+    }
+
     void draw_axes() {
         setColor(0.0f, 0.0f, 0.0f);
 
@@ -64,8 +88,8 @@ public:
             glPopMatrix();
         }
         glBegin(GL_LINES);
-            glVertex2f(position_fl[0] - multiplier, position_fl[1] - (height - tyre_position));
-            glVertex2f(position_fl[0] + width + multiplier, position_fl[1] - (height - tyre_position));
+            glVertex2f(position_fl[0] - multiplier, position_fl[1] - (height - rear_tyre_position));
+            glVertex2f(position_fl[0] + width + multiplier, position_fl[1] - (height - rear_tyre_position));
         glEnd();
     }
 
@@ -81,7 +105,7 @@ public:
 
             glPushMatrix();
                 glTranslatef(cx, cy, 0.0f);          // move to tire center
-                glRotatef(tyre_angle, 0.0f, 0.0f, 1.0f); // rotate about center
+                glRotatef(-tyre_angle, 0.0f, 0.0f, 1.0f); // rotate about center
                 glRectf(-tyre_width/2.0f,  tyre_height/2.0f, tyre_width/2.0f, -tyre_height/2.0f); // draw centered tire
             glPopMatrix();
         }
@@ -95,13 +119,13 @@ public:
 
             glPushMatrix();
                 glTranslatef(cx, cy, 0.0f);          // move to tire center
-                glRotatef(tyre_angle, 0.0f, 0.0f, 1.0f); // rotate about center
+                glRotatef(-tyre_angle, 0.0f, 0.0f, 1.0f); // rotate about center
                 glRectf(-tyre_width/2.0f,  tyre_height/2.0f, tyre_width/2.0f, -tyre_height/2.0f); // draw centered tire
             glPopMatrix();
         }
 
         float rlx = flx;
-        float rly = position_fl[1] - height + tyre_height + tyre_position - (tyre_height / 2);
+        float rly = position_fl[1] - height + tyre_height + rear_tyre_position - (tyre_height / 2);
         glRectf(rlx, rly, rlx + tyre_width, rly - tyre_height);
 
         float rrx = frx;
@@ -110,15 +134,31 @@ public:
 
     }
 
-    void draw_body() {
+    virtual void draw_body() {
         setColor();
         glRectf(position_fl[0], position_fl[1], position_fl[0] + width, position_fl[1] - height);
+
+        {
+            float side_padding = 5;
+            float window_height = 20;
+            float fronty = position_fl[1] - 25;
+            setColor(0.1f, 0.1f, 0.3f);
+            glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
+        }
+
+        {
+            float side_padding = 5;
+            float window_height = 15;
+            float fronty = position_fl[1] - 70;
+            setColor(0.1f, 0.1f, 0.3f);
+            glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
+        }
     }
 
     void show() {
         // Find center of the rear line (pivot for the car)
         float pivotX = position_fl[0] + width / 2.0f;
-        float pivotY = position_fl[1] - (height - tyre_position);
+        float pivotY = position_fl[1] - (height - rear_tyre_position);
 
         glPushMatrix();
             // Move to pivot point
@@ -139,17 +179,6 @@ public:
     }
 
     
-    void changeColor(float r, float g, float b) {
-        color[0] = r; color[1] = g; color[2] = b;
-    }
-
-    void setColor() {
-        glColor3f(color[0], color[1], color[2]);
-    }
-
-    void setColor(float r, float g, float b) {
-        glColor3f(r, g, b);
-    }
 
     void steer() {
 
@@ -215,7 +244,7 @@ public:
             velocity = std::max(velocity, -max_velocity / 2);
         }
 
-        angle += velocity / 6 * tyre_angle * time;
+        angle += velocity / 6 * -tyre_angle * time;
         
         if(angle > 360) angle -= 360;
         if (angle < -360) angle += 360;
@@ -242,7 +271,7 @@ public:
 
         // Center of rotation (rear line center)
         float pivotX = position_fl[0] + width / 2.0f;
-        float pivotY = position_fl[1] - (height - tyre_position);
+        float pivotY = position_fl[1] - (height - rear_tyre_position);
 
         float local[4][2] = {
             {0, 0},            // bottom-left
@@ -253,7 +282,7 @@ public:
 
         for(int i = 0; i < 4; i++) {
             float lx = local[i][0] - width/2.0f;   // translate to pivot
-            float ly = local[i][1] + (height - tyre_position);
+            float ly = local[i][1] + (height - rear_tyre_position);
 
             // rotate
             corners[i][0] = pivotX + lx * cos(rad) - ly * sin(rad);

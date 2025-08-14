@@ -6,8 +6,11 @@
 
 #include "GLUTOutput.h"
 #include "GLUTCar.h"
+#include "GLUTVan.h"
+#include "GLUTSuv.h"
 GLUTOutput* outputHandler = nullptr;
-GLUTCar* anycar = nullptr, *othercar = nullptr;
+GLUTCar* anycar = nullptr;
+GLUTCar* othercars[2];
 
 float time = 0;
 
@@ -39,18 +42,26 @@ void display (void)
     outputHandler->output(-750, 400, "position " + (anycar->getPosition()));
     outputHandler->output(-750, 450, "angle " + std::to_string(anycar->getAngle()));
 
-    othercar->show();
+    for(GLUTCar* car : othercars){
+        car->show();
+    }
     float newtime = glutGet(GLUT_ELAPSED_TIME);
     anycar->update(newtime - time);
     anycar->show();
 
-    
-
-    if (anycar->isColliding(othercar)) {
-        anycar->changeColor(0.0f, 1.0f, 0.0);
+    {
+        bool problem = false;
+        for(GLUTCar* car : othercars){
+            if (anycar->isColliding(car)) {
+                problem = true;
+            }
+        }
+        if(problem){
+            anycar->changeColor(0.0f, 1.0f, 0.0);
+        }
+        else anycar->changeColor(1.0f, 0.0f, 0.0f);
     }
-    else anycar->changeColor(1.0f, 0.0f, 0.0f);
-    
+        
     time = newtime;
 
     glFlush();
@@ -69,10 +80,10 @@ void keyUp(unsigned char key, int x, int y) {
 void update(void) {
 
     if (keyStates['a'] || keyStates['A']) {
-        anycar->steer(-1.0f);
+        anycar->steer(1.0f);
     }
     else if (keyStates['d'] || keyStates['D']) {
-        anycar->steer(1.0f);
+        anycar->steer(-1.0f);
     }
     else anycar->steer();
 
@@ -100,10 +111,15 @@ int main (int argc, char** argv) {
     outputHandler = new GLUTOutput();
 
     float fl[2] = {0.0, 0.0};
-    float fl2[2] = {0.0, -200.0};
     anycar = new GLUTCar(fl);
-    othercar = new GLUTCar(fl2, 0, 40);
-    othercar->changeColor(0.0f, 0.0f, 1.0f);
+    fl[0] = 0.0; fl[1] = -200.0;
+
+    othercars[0] = new GLUTVan(fl, 0, 40);
+    othercars[0]->changeColor(0.2f, 0.7f, 0.2f);
+
+    fl[0] = 70.0; fl[1] = -200.0;
+    othercars[1] = new GLUTSuv(fl, 0, -20);
+    othercars[1]->changeColor(0.7f, 0.2f, 0.2f);
     
     // Giving name to window
     glutCreateWindow("OpenGL testing");
