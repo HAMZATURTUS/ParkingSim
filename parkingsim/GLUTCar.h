@@ -10,16 +10,26 @@ private:
     float color_choices[4][3] = {{0.4, 0.4, 0.4}, {0.3, 0.7, 0.3}, {0.3, 0.3, 0.7}, {0.7, 0.3, 0.3}};
 
 protected:
-    float height = 100;
-    float width = 50;
+
+    float meter_px = 100.0f / 4.5; // 100px = 4.5m
+
+    float height_meters = 4.92;
+    float width_meters = 1.84;
+    float height = height_meters * meter_px;
+    float width = width_meters * meter_px;
     float weight = 1500; //kg
 
-    int tyre_height = 20;
-    int tyre_width = 10;
-    int tyre_offset = 0;
-    int tyre_position = 15; // how far off the front of the car is the tyre's center?
-    int rear_tyre_position = 15;
+    float tyre_height = 20;
+    float tyre_width = 10;
+    float tyre_offset = 0;
+    float tyre_position = 15; // how far off the front of the car is the tyre's center?
+    float rear_tyre_position = 15;
     float wheelbase = height - tyre_position - rear_tyre_position;
+
+    float windshield_position;
+    float windshield_height;
+    float rear_window_position;
+    float rear_window_height;
 
     float color[3]; // r g b
     float original_color[3];
@@ -32,7 +42,6 @@ protected:
     float acceleration = 0;
     float max_acceleration = 1.5;
 
-    float meter_px = 100.0f / 4.5; // 100px = 4.5m
 
     bool brakes_on = false;
     bool lights_on = false;
@@ -66,10 +75,12 @@ public:
     }
 
     void setHeight(float x){
-        height = x;
+        height_meters = x;
+        height = height_meters * meter_px;
     }
     void setWidth(float x){
-        width = x;
+        width_meters = x;
+        width = width_meters * meter_px;
     }
     void setTyreposition(float x, float y){
         tyre_position = x;
@@ -80,6 +91,26 @@ public:
     }
     float getSpeed() {
         return speed;
+    }
+
+    void set_window_measuremeants(float windshield_start, float windshield_length, float rear_window_start, float rear_window_length) {
+
+        this->windshield_position = windshield_start * height;
+        this->windshield_height = windshield_length * height;
+
+        this-> rear_window_position = rear_window_start * height;
+        this->rear_window_height = rear_window_length * height;
+
+    }
+
+    void set_tyre_measuremeants(float tyre_height, float tyre_width, float tyre_position, float rear_tyre_position) {
+
+        this->tyre_height = tyre_height * height;
+        this->tyre_width = tyre_width * width;
+        this->tyre_position = tyre_position * height;
+        this->rear_tyre_position = rear_tyre_position * height;
+
+        wheelbase = height - this->tyre_position - this->rear_tyre_position;
     }
 
     void changeColor(float r, float g, float b) {
@@ -213,7 +244,23 @@ public:
         setColor(0.1f, 0.1f, 0.3f);
     }
 
-    virtual void draw_windows() = 0;
+    void draw_windows() {
+
+        set_window_color();
+        
+        float side_padding = 3;
+        {
+            float window_height = windshield_height;
+            float fronty = position_fl[1] - windshield_position;
+            glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - window_height);
+        }
+
+        {
+            float window_height = rear_window_height;
+            float fronty = position_fl[1] - rear_window_position;
+            glRectf(position_fl[0] + side_padding, fronty, position_fl[0] + width - side_padding, fronty - rear_window_height);
+        }
+    }
 
     void draw_light_fl(float side_padding, float light_height, float light_width) {
         float fronty = position_fl[1];
@@ -238,9 +285,9 @@ public:
 
     void draw_lights() {
         
-        float side_padding = 3;
+        float side_padding = 0;
         float light_height = 5;
-        float light_width = 15;
+        float light_width = 13;
 
         // headlights
         {
