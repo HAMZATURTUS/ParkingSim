@@ -17,7 +17,7 @@ protected:
     float width_meters = 1.84;
     float height = height_meters * meter_px;
     float width = width_meters * meter_px;
-    float weight = 1500; //kg
+    float mass = 1500; //kg
 
     float tyre_height = 20;
     float tyre_width = 10;
@@ -31,16 +31,25 @@ protected:
     float rear_window_position;
     float rear_window_height;
 
+    // these are for friction calculations
+    const float g = 9.81;
+    const float air_density = 1.29; // kg/m^3
+    float frontal_area; // m^2
+    float cd; // friction coefficient;
+    float crr = 0.011; // rolling resistance coefficient 0.011 on asphalt
+
     float color[3]; // r g b
     float original_color[3];
 
     float angle; // this is for the direction of the car
     float tyre_angle = 0; // i will make this value relative to the car. +angle means its pointing to the right. otherwise to the left. this value should not exceed [-45, 45]
-    float max_tyre_angle = 45;
+    float max_tyre_angle = 35;
     float speed = 0; // ill most likely use SI units for these and convert them to px later
     float max_speed = 20;
     float acceleration = 0;
-    float max_acceleration = 1.5;
+    float max_acceleration = 3.5;
+    float max_deceleration_force = 9000;
+    float max_deceleration = 6.0;
 
 
     bool brakes_on = false;
@@ -86,11 +95,20 @@ public:
         tyre_position = x;
         rear_tyre_position = y;
     }
-    void setWeight(float x){
-        weight = x;
+    void setMass(float x){
+        mass = x;
+        max_deceleration = max_deceleration_force / mass;
     }
     float getSpeed() {
         return speed;
+    }
+
+    float getFriction() {
+        return calculate_friction_force();
+    }
+
+    float getAcceleration() {
+        return acceleration;
     }
 
     void set_window_measuremeants(float windshield_start, float windshield_length, float rear_window_start, float rear_window_length) {
@@ -111,6 +129,15 @@ public:
         this->rear_tyre_position = rear_tyre_position * height;
 
         wheelbase = height - this->tyre_position - this->rear_tyre_position;
+    }
+
+    void set_friction_vars(float cd, float frontal_area) {
+        this->frontal_area = frontal_area;
+        this->cd = cd;
+    }
+
+    void set_deceleration_force(float x) {
+        max_deceleration_force = x;
     }
 
     void changeColor(float r, float g, float b) {
@@ -317,11 +344,11 @@ public:
                 setColor(1.0f, 1.0f, 1.0f);
                 float light_w = light_width / 2;
                 {
-                    draw_light_rl(side_padding, light_height, light_w);
+                    draw_light_rl(side_padding + light_width - light_w, light_height, light_w);
                 }
 
                 {
-                    draw_light_rr(side_padding, light_height, light_w);
+                    draw_light_rr(side_padding + light_width - light_w, light_height, light_w);
                 }
             }
 
@@ -404,16 +431,37 @@ public:
 
     }
 
+    float calculate_friction_force() {
+
+        //Fdrag =  0.5 * Cd * A * rho * v2
+        float F_drag = 0.5 * cd * frontal_area * air_density * (speed * speed);
+        float F_rr = crr * mass * g;
+
+        int x = 1;
+        if(speed > 0) x = -1;
+        else if(speed == 0) x = 0;
+
+        return (F_drag + F_rr) * x;
+
+    }
+
+    float calculate_angular_velocity() { // radians per second
+
+        float wheelbase_m = wheelbase / meter_px;
+        float r = wheelbase_m / std::sin(abs(tyre_angle) * M_PI / 180);
+
+        int x = -1 * tyre_angle / abs(tyre_angle);
+        return x * speed / r;
+
+    }
+
     void accelerate() {
 
         release_brakes();
 
-        float loss = 0.5;
+        float loss = calculate_friction_force() / mass;
 
-        if (speed > loss){
-            acceleration = -loss;
-        }
-        else if(speed < -loss){
+        if (speed != loss){
             acceleration = loss;
         }
         else{
@@ -421,7 +469,9 @@ public:
             speed = 0;
         }
 
-        if(acceleration * speed < 0) press_brakes();
+        if(acceleration * speed < 0){
+            if((abs(acceleration) >= 0.5)) press_brakes();
+        }
 
     }
 
@@ -429,7 +479,7 @@ public:
 
         if(x < 0){
             press_brakes();
-            acceleration = max_acceleration * x;
+            acceleration = max_deceleration * x + (calculate_friction_force() / mass);
             
             if(speed < 0) acceleration *= -1;
             else if(speed == 0) acceleration = 0;
@@ -437,8 +487,11 @@ public:
         }
         else release_brakes();
 
-        if (reverse) acceleration = max_acceleration * -x;
-        else acceleration = max_acceleration * x;
+        acceleration = max_acceleration * x;
+
+        if (reverse) acceleration *= -1;
+
+        acceleration += calculate_friction_force() / mass;
 
     }
 
@@ -459,12 +512,12 @@ public:
         }
 
         time /= 1000;
-        if (time > 0.004f) time = 0.004;
+        if (time > 0.05f) time = 0.05;
 
 
         //printf("%f\n", time); 
 
-        speed += meter_px * acceleration * time;
+        speed += acceleration * time;
 
         if (speed >= 0) {
             speed = std::min(speed, max_speed);
@@ -473,9 +526,10 @@ public:
             speed = std::max(speed, -max_speed / 2);
         }
 
-        if(abs(speed) < 0.1) speed = 0;
+        if(abs(speed) < 0.01) speed = 0;
 
-        angle += speed / 6 * -tyre_angle * 1.1 * time;
+        float angular_v_second = calculate_angular_velocity() * 180 / M_PI; // now in degrees
+        angle += angular_v_second * time;
         
         if(angle > 360) angle -= 360;
         if (angle < -360) angle += 360;

@@ -24,7 +24,7 @@ private:
     
     // window stuff
     int window_size[2] = {1600, 1000}; // [x, y]
-    int window_division[4] = {-800, 800, -500, 500};
+    int window_division[4] = {-window_size[0] / 2, window_size[0] / 2, -window_size[1] / 2, window_size[1] / 2};
     bool text_hidden = false;
 
 
@@ -76,6 +76,8 @@ public:
         for(int i = 0; i < 2; i++){
             this->window_size[i] = window_size[i];
         }
+
+        window_division[0] = -window_size[0] / 2; window_division[1] = window_size[0] / 2; window_division[2] = -window_size[1] / 2; window_division[3] = window_size[1] / 2;
 
         glutInitWindowSize(this->window_size[0], this->window_size[1]);
         glutInitWindowPosition(0, 0);
@@ -143,22 +145,34 @@ public:
                 "X for hazards",
                 "H to hide"
             };
-            float start = 450;
+            float start = 450, startx = window_division[0] + 50;
             for(std::string& message : messages){
-                outputHandler->output(-750, start, message);
+                outputHandler->output(startx, start, message);
                 start -= 30;
             }
 
-            std::string infos[3] = {
+            std::string infos[6] = {
                 "position " + (player->getPosition()),
                 "angle " + std::to_string(player->getAngle()),
-                "speed " + std::to_string(player->getSpeed())
+                "speed " + std::to_string(player->getSpeed()) + "m/s " + std::to_string(player->getSpeed() * 3.6) + "km/h",
+                "friction " + std::to_string(player->getFriction()),
+                "acceleration " + std::to_string(player->getAcceleration()),
+                "length, width " + std::to_string(window_size[0]) + " " + std::to_string(window_size[1])
             };
             for(std::string& info : infos){
-                outputHandler->output(-750, start, info);
+                outputHandler->output(startx, start, info);
                 start -= 30;
             }
         }
+    }
+
+    void update_window_dimensions() {
+        this->window_size[0] = glutGet(GLUT_WINDOW_WIDTH);
+        this->window_size[1] = glutGet(GLUT_SCREEN_HEIGHT);
+
+        window_division[0] = -window_size[0] / 2; window_division[1] = window_size[0] / 2; window_division[2] = -window_size[1] / 2; window_division[3] = window_size[1] / 2;
+        //gluOrtho2D(window_division[0], window_division[1], window_division[2], window_division[3]);
+
     }
 
     void display() {
@@ -167,6 +181,7 @@ public:
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+        update_window_dimensions();
         
         for(GLUTCar* car : others){
             car->show();
