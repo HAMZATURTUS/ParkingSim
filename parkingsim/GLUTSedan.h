@@ -6,7 +6,12 @@
 
 #include "GLUTCar.h"
 
-// toyota camry https://www.edmunds.com/toyota/camry/2025/sedan/features-specs/
+// toyota camry 
+/*
+    https://www.edmunds.com/toyota/camry/2025/sedan/features-specs/     dimensions
+    https://ecomodder.com/wiki/Vehicle_Coefficient_of_Drag_List         friction values
+    https://gearboxlist.com/toyota/ua80/                                gear ratios
+*/
 class GLUTSedan : public GLUTCar {
 private:
     

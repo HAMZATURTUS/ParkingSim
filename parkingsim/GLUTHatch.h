@@ -6,7 +6,11 @@
 
 #include "GLUTCar.h"
 
-// toyota yaris https://www.carsguide.com.au/toyota/yaris/car-dimensions
+// toyota yaris
+/*
+    https://www.carsguide.com.au/toyota/yaris/car-dimensions        dimensions
+    https://ecomodder.com/wiki/Vehicle_Coefficient_of_Drag_List     friction values
+*/
 class GLUTHatch : public GLUTCar {
 private:
     

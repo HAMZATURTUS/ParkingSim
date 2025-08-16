@@ -4,14 +4,23 @@
 #include <GL/glut.h>
 #include <cmath>
 
+/*
+    https://www.asawicki.info/Mirror/Car%20Physics%20for%20Games/Car%20Physics%20for%20Games.html   engine, brake, turning physics
+*/
+
 class GLUTCar {
 
 private:
     float color_choices[4][3] = {{0.4, 0.4, 0.4}, {0.3, 0.7, 0.3}, {0.3, 0.3, 0.7}, {0.7, 0.3, 0.3}};
+    int color_choice = 0;
 
 protected:
 
-    float meter_px = 100.0f / 4.5; // 100px = 4.5m
+    float meter_px = 100.0f / 5;            // 100px = 5m
+
+    float side_padding_wm = 0.135;
+    float light_width_m = 0.585;
+    float light_height_m = 0.25;
 
     float height_meters = 4.92;
     float width_meters = 1.84;
@@ -22,7 +31,7 @@ protected:
     float tyre_height = 20;
     float tyre_width = 10;
     float tyre_offset = 0;
-    float tyre_position = 15; // how far off the front of the car is the tyre's center?
+    float tyre_position = 15;               // how far off the front of the car is the tyre's center?
     float rear_tyre_position = 15;
     float wheelbase = height - tyre_position - rear_tyre_position;
 
@@ -33,22 +42,22 @@ protected:
 
     // these are for friction calculations
     const float g = 9.81;
-    const float air_density = 1.29; // kg/m^3
-    float frontal_area; // m^2
-    float cd; // friction coefficient;
-    float crr = 0.011; // rolling resistance coefficient 0.011 on asphalt
+    const float air_density = 1.29;         // kg/m^3
+    float frontal_area;                     // m^2
+    float cd;                               // friction coefficient;
+    float crr = 0.011;                      // rolling resistance coefficient 0.011 on asphalt
 
     float color[3]; // r g b
     float original_color[3];
 
-    float angle; // this is for the direction of the car
-    float tyre_angle = 0; // i will make this value relative to the car. +angle means its pointing to the right. otherwise to the left. this value should not exceed [-45, 45]
+    float angle;                            // this is for the direction of the car's body
+    float tyre_angle = 0;                   // i will make this value relative to the car. +angle means its pointing to the right. otherwise to the left. this value should not exceed [-45, 45]
     float max_tyre_angle = 35;
-    float speed = 0; // ill most likely use SI units for these and convert them to px later
+    float speed = 0;                        // ill most likely use SI units for these and convert them to px later
     float max_speed = 20;
     float acceleration = 0;
-    float max_acceleration = 3.5;
-    float max_deceleration_force = 9000;
+    float max_acceleration = 3.5;           // i want to turn this into a torque+gear thing but the ai will probably freak out over the automatic transmission and its too much effort for basically nothing
+    float max_deceleration_force = 9000;    // the reference literally states "ill assume a constant force" and no car manufacturer wants to give me their numbers so take this
     float max_deceleration = 6.0;
 
 
@@ -56,17 +65,19 @@ protected:
     bool lights_on = false;
     bool reverse = false;
 
-    bool blinker_left[2] = { false }; // [is the blinker on, is the light on at this second]
+    bool blinker_left[2] = { false };       // [is the blinker on, is the light on at this second]
     bool blinker_right[2] = { false };
     float blinker_time = 0;
-    float max_blinker_time = 400; // how many miliseconds should the light stay on
+    float max_blinker_time = 400;           // how many miliseconds should the light stay on
 
     //position
-    float position_fl[2]; // [x1, y1]
+    float position_fl[2];                   // [x1, y1]
     
 
 public:
     GLUTCar(float fl[2], float angle = 0, float tyre_angle = 0, int color_choice = 0) {
+
+        this->color_choice = color_choice;
 
         for(int i = 0; i < 3; i++){
             color[i] = color_choices[color_choice][i];
@@ -111,6 +122,10 @@ public:
         return acceleration;
     }
 
+    float getMeterpx() {
+        return meter_px;
+    }
+
     void set_window_measuremeants(float windshield_start, float windshield_length, float rear_window_start, float rear_window_length) {
 
         this->windshield_position = windshield_start * height;
@@ -144,12 +159,28 @@ public:
         color[0] = r; color[1] = g; color[2] = b;
     }
 
+    void changeColor(int choice) {
+        int n = sizeof(color_choices) / sizeof(color_choices[0]);
+        choice %= n;
+        color_choice = choice;
+        changeColor(color_choices[choice][0], color_choices[choice][1], color_choices[choice][2]);
+        setOriginal(color_choices[choice][0], color_choices[choice][1], color_choices[choice][2]);
+    }
+
     void returnColor() {
         color[0] = original_color[0]; color[1] = original_color[1]; color[2] = original_color[2];
     }
 
+    int getColorchoice() {
+        return color_choice;
+    }
+
     void setColor() {
         glColor3f(color[0], color[1], color[2]);
+    }
+
+    void setOriginal(float r, float g, float b){
+        original_color[0] = r; original_color[1] = g; original_color[2] = b;
     }
 
     void setColor(float r, float g, float b) {
@@ -275,7 +306,7 @@ public:
 
         set_window_color();
         
-        float side_padding = 3;
+        float side_padding = side_padding_wm * meter_px;
         {
             float window_height = windshield_height;
             float fronty = position_fl[1] - windshield_position;
@@ -313,8 +344,8 @@ public:
     void draw_lights() {
         
         float side_padding = 0;
-        float light_height = 5;
-        float light_width = 13;
+        float light_height = meter_px * light_height_m;
+        float light_width = meter_px * light_width_m;
 
         // headlights
         {
@@ -407,7 +438,7 @@ public:
 
     void steer() {
 
-        float ret = abs(speed / 100);
+        float ret = abs(speed / 60);
         if (speed != 0){
             if(tyre_angle > 1){
                 tyre_angle -= ret;

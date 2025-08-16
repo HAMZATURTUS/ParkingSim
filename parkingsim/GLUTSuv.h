@@ -8,8 +8,8 @@
 
 // Ford Explorer 
 /*
-    https://www.motortrend.com/cars/ford/explorer/2025/specs?trim=XLT+2WD
-    https://ecomodder.com/wiki/Vehicle_Coefficient_of_Drag_List
+    https://www.motortrend.com/cars/ford/explorer/2025/specs?trim=XLT+2WD   dimensions
+    https://ecomodder.com/wiki/Vehicle_Coefficient_of_Drag_List             friction values
 */
 class GLUTSuv : public GLUTCar {
 private:

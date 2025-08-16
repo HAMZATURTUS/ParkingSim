@@ -22,6 +22,8 @@ private:
 
     static ParkingSim* currentInstance;
     
+    float meter_px; // prone to change. it will take the value from car.h
+
     // window stuff
     int window_size[2] = {1600, 1000}; // [x, y]
     int window_division[4] = {-window_size[0] / 2, window_size[0] / 2, -window_size[1] / 2, window_size[1] / 2};
@@ -29,6 +31,7 @@ private:
 
 
     // car stuff
+    int car_choice = 0, color_choice = 0;
     float time = 0;
     float fl[2] = {0.0, 0.0};
     GLUTCar* player = new GLUTSedan(fl);
@@ -67,6 +70,14 @@ private:
 public:
     ParkingSim(int window_size_x = 1600, int window_size_y = 1000) {
         
+        float *fl = new float[2];
+        fl[0] = 0.0; fl[1] = 0.0;
+        GLUTCar *stabilizer = new GLUTSedan(fl);
+
+        meter_px = stabilizer->getMeterpx();
+
+        delete stabilizer;
+        delete fl;
 
         std::srand(static_cast<unsigned>(std::time(nullptr))); // needs <cstdlib> + <ctime>
 
@@ -116,6 +127,28 @@ public:
         glutMainLoop();
     }
 
+    void change_car() {
+
+
+        float angle = 0, tyre_angle = 0;
+        int color_choice = player->getColorchoice();
+        
+        delete player;
+
+        car_choice += 1;
+        car_choice %= 4;
+        switch (car_choice){
+            case 0: player = new GLUTSedan(fl, angle, tyre_angle, color_choice); break;
+            case 1: player = new GLUTHatch(fl, angle, tyre_angle, color_choice); break;
+            case 2: player = new GLUTSuv(fl, angle, tyre_angle, color_choice); break;
+            default: player = new GLUTVan(fl, angle, tyre_angle, color_choice); break;
+        }
+    }
+
+    void change_color() {
+        player->changeColor(player->getColorchoice() + 1);
+    }
+
     GLUTCar* create_random(int x, float fl[2]){
 
         float position[2] = {fl[0], fl[1] + (rand() % 11) - 5};
@@ -125,7 +158,7 @@ public:
 
         switch (x){
             case 0: return new GLUTHatch(position, angle, tyre_angle, color_choice);
-            case 1: return new GLUTSedan(position, angle, tyre_angle, color_choice);
+            case 1: return new GLUTSedan(position, angle, tyre_angle, color_choice); 
             case 2: return new GLUTSuv(position, angle, tyre_angle, color_choice);
             default: return new GLUTVan(position, angle, tyre_angle, color_choice);
         }
@@ -136,14 +169,16 @@ public:
         if(text_hidden == false){
             player->setColor(0.0f, 0.0f, 0.0);
 
-            std::string messages[7] = {
+            std::string messages[9] = {
                 "WASD to control the car",
                 "Q to reverse",
                 "E to drive",
                 "Z for left blinker",
                 "C for right blinker",
                 "X for hazards",
-                "H to hide"
+                "Y to change car",
+                "U to change car color",
+                "H to hide info"
             };
             float start = 450, startx = window_division[0] + 50;
             for(std::string& message : messages){
@@ -151,13 +186,14 @@ public:
                 start -= 30;
             }
 
-            std::string infos[6] = {
+            std::string infos[7] = {
                 "position " + (player->getPosition()),
                 "angle " + std::to_string(player->getAngle()),
                 "speed " + std::to_string(player->getSpeed()) + "m/s " + std::to_string(player->getSpeed() * 3.6) + "km/h",
                 "friction " + std::to_string(player->getFriction()),
                 "acceleration " + std::to_string(player->getAcceleration()),
-                "length, width " + std::to_string(window_size[0]) + " " + std::to_string(window_size[1])
+                "length, width " + std::to_string(window_size[0]) + " " + std::to_string(window_size[1]),
+                "car choice " + std::to_string(car_choice)
             };
             for(std::string& info : infos){
                 outputHandler->output(startx, start, info);
@@ -286,6 +322,12 @@ public:
         }
         if(single_pressed('X')){
             player->hazards();
+        }
+        if(single_pressed('Y')){
+            change_car();
+        }
+        if(single_pressed('U')){
+            change_color();
         }
 
         glutPostRedisplay(); 

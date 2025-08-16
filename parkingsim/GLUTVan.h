@@ -6,7 +6,10 @@
 
 #include "GLUTCar.h"
 
-// GMC Savana https://www.caranddriver.com/gmc/savana/specs
+// GMC Savana
+/*
+    https://www.caranddriver.com/gmc/savana/specs       dimensions
+*/
 class GLUTVan : public GLUTCar {
 private:
     
