@@ -286,6 +286,7 @@ public:
     }
 
     void update_camera_position(float time) {
+        time /= 1000;
         cam_position_x += cam_speed_x * time;
         cam_position_y += cam_speed_y * time;
     }
