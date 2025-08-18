@@ -13,6 +13,7 @@
 #include "GLUTOutput.h"
 #include "GLUTCar.h"
 #include "GLUTVan.h"
+#include "GLUTMinivan.h"
 #include "GLUTSuv.h"
 #include "GLUTSedan.h"
 #include "GLUTHatch.h"
@@ -31,7 +32,7 @@ private:
 
 
     // car stuff
-    int car_choice = 0, color_choice = 0;
+    int car_choice = 0, color_choice = 0, car_choices = 5, color_choices = 4;
     float time = 0;
     float fl[2] = {0.0, 0.0};
     GLUTCar* player = new GLUTSedan(fl);
@@ -120,7 +121,7 @@ public:
 
         float fl[2] = {-70.0f * others_len / 2, -200};
         for(int i = 0; i < others_len; i++){
-            others[i] = create_random(rand() % 4, fl);
+            others[i] = create_random(rand() % 5, fl);
             fl[0] += 70;
         }
 
@@ -136,11 +137,12 @@ public:
         delete player;
 
         car_choice += 1;
-        car_choice %= 4;
+        car_choice %= car_choices;
         switch (car_choice){
             case 0: player = new GLUTSedan(fl, angle, tyre_angle, color_choice); break;
             case 1: player = new GLUTHatch(fl, angle, tyre_angle, color_choice); break;
             case 2: player = new GLUTSuv(fl, angle, tyre_angle, color_choice); break;
+            case 3: player = new GLUTMinivan(fl, angle, tyre_angle, color_choice); break;
             default: player = new GLUTVan(fl, angle, tyre_angle, color_choice); break;
         }
     }
@@ -154,12 +156,13 @@ public:
         float position[2] = {fl[0], fl[1] + (rand() % 11) - 5};
         float angle = 0;
         float tyre_angle = (rand() % 91) - 45;
-        int color_choice = rand() % 4;
+        int color_choice = rand() % color_choices;
 
         switch (x){
             case 0: return new GLUTHatch(position, angle, tyre_angle, color_choice);
             case 1: return new GLUTSedan(position, angle, tyre_angle, color_choice); 
             case 2: return new GLUTSuv(position, angle, tyre_angle, color_choice);
+            case 3: return new GLUTMinivan(position, angle, tyre_angle, color_choice);
             default: return new GLUTVan(position, angle, tyre_angle, color_choice);
         }
     }

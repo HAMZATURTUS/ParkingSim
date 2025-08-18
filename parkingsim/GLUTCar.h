@@ -438,7 +438,7 @@ public:
 
     void steer() {
 
-        float ret = abs(speed / 60);
+        float ret = abs(speed / 30);
         if (speed != 0){
             if(tyre_angle > 1){
                 tyre_angle -= ret;
