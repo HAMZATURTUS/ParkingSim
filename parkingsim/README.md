@@ -10,15 +10,15 @@ Physics are mostly based on the equations in [Car Physics for Games](https://www
 
 Each car's measurements are based on a chosen real counterpart and uses their practical values
 
-GLUTSedan   - Toyota Camry
+GLUTSedan \t- Toyota Camry
 
-GLUTHatch   - Toyota Yaris
+GLUTHatch \t- Toyota Yaris
 
-GLUTSuv     - Ford Explorer
+GLUTSuv \t- Ford Explorer
 
-GLUTMinivan - Dodge Caravan
+GLUTMinivan \t- Dodge Caravan
 
-GLUTVan     - GMC Savana
+GLUTVan \t- GMC Savana
 
 so far the program can only run on linux using
 
