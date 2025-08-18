@@ -6,7 +6,7 @@ An OOD project that simulates a car in a parking lot in 2d.
 
 Parking features will be implemented.... eventually
 
-Physics are mostly based on the equations in (Car Physics for Games)[https://www.asawicki.info/Mirror/Car%20Physics%20for%20Games/Car%20Physics%20for%20Games.html]
+Physics are mostly based on the equations in [Car Physics for Games](https://www.asawicki.info/Mirror/Car%20Physics%20for%20Games/Car%20Physics%20for%20Games.html)
 
 Each car's measurements are based on a chosen real counterpart and uses their practical values
 
