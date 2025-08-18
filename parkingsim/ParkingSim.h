@@ -11,12 +11,16 @@
 #include <ctime>
 
 #include "GLUTOutput.h"
+
 #include "GLUTCar.h"
+
 #include "GLUTVan.h"
 #include "GLUTMinivan.h"
 #include "GLUTSuv.h"
 #include "GLUTSedan.h"
 #include "GLUTHatch.h"
+
+#include "ParkingLot.h"
 
 class ParkingSim {
 private:
@@ -33,7 +37,7 @@ private:
 
     // car stuff
     int car_choice = 0, color_choice = 0, car_choices = 5, color_choices = 4;
-    float time = 0;
+    float ptime = 0;
     float fl[2] = {0.0, 0.0};
     GLUTCar* player = new GLUTSedan(fl);
     GLUTCar* others[16];
@@ -46,6 +50,13 @@ private:
     bool keyStates[256] = { false };
     bool pressedLastFrame[256] = { false };
 
+    ParkingLot* lot;
+
+    // camera
+    float cam_position_x;
+    float cam_position_y;
+    float cam_speed_x = 0;
+    float cam_speed_y = 0;
 
     // these make the constructor work
     static void displayCallback() {
@@ -70,17 +81,12 @@ private:
 
 public:
     ParkingSim(int window_size_x = 1600, int window_size_y = 1000) {
+
+        parkinglot_setup();
         
-        float *fl = new float[2];
-        fl[0] = 0.0; fl[1] = 0.0;
-        GLUTCar *stabilizer = new GLUTSedan(fl);
+        meterpx_setup();
 
-        meter_px = stabilizer->getMeterpx();
-
-        delete stabilizer;
-        delete fl;
-
-        std::srand(static_cast<unsigned>(std::time(nullptr))); // needs <cstdlib> + <ctime>
+        std::srand(static_cast<unsigned>(std::time(nullptr))); // need to do this otherwise random generates the exact same stuff each time
 
         currentInstance = this;
         
@@ -115,6 +121,22 @@ public:
         for(GLUTCar* car : others) delete car;
         delete player;
         delete outputHandler;
+    }
+
+    void parkinglot_setup() {
+        this->lot = new ParkingLot();
+        lot->getStartingPosition(cam_position_x, cam_position_y);
+    }
+
+    void meterpx_setup() {
+        float *fl = new float[2];
+        fl[0] = 0.0; fl[1] = 0.0;
+        GLUTCar *stabilizer = new GLUTSedan(fl);
+
+        meter_px = stabilizer->getMeterpx();
+
+        delete stabilizer;
+        delete fl;
     }
 
     void test_field() {
@@ -189,14 +211,23 @@ public:
                 start -= 30;
             }
 
-            std::string infos[7] = {
+            float x, y;
+            player->getPosition(x, y);
+
+            float s_x, s_y;
+            player->getSpeeds(s_x, s_y);
+            std::string divisions = "";
+            for(auto division : window_division){ divisions += std::to_string(division) + " "; }
+            std::string infos[9] = {
                 "position " + (player->getPosition()),
                 "angle " + std::to_string(player->getAngle()),
                 "speed " + std::to_string(player->getSpeed()) + "m/s " + std::to_string(player->getSpeed() * 3.6) + "km/h",
                 "friction " + std::to_string(player->getFriction()),
                 "acceleration " + std::to_string(player->getAcceleration()),
                 "length, width " + std::to_string(window_size[0]) + " " + std::to_string(window_size[1]),
-                "car choice " + std::to_string(car_choice)
+                "s_x, s_y " + std::to_string(s_x) + ", " + std::to_string(s_y),
+                "window divisions " + divisions,
+                "position " + std::to_string(y),
             };
             for(std::string& info : infos){
                 outputHandler->output(startx, start, info);
@@ -214,20 +245,70 @@ public:
 
     }
 
+    void update_camera_speed() {
+        float x, y;
+        player->getPosition(x, y);
+
+        // s_x is negative when the car is moving to the right
+        float s_x, s_y;
+        player->getSpeeds(s_x, s_y);
+
+        if(x < (window_division[0] + 300) && s_x > 0){  // moving left
+            cam_speed_x = -s_x * meter_px;
+
+            float left = cam_position_x - window_size[0] / 2;
+            if(left <= 0) cam_speed_x = 0;
+        }
+        else if(x > (window_division[1] - 300) && s_x < 0){ // moving right
+            cam_speed_x = -s_x * meter_px;
+
+            float right = cam_position_x + window_size[0] / 2;
+            if(right >= lot->getWidth()) cam_speed_x = 0;
+        }
+        else cam_speed_x = 0;
+
+        if(y < (window_division[2] + 200) && s_y < 0) { // moving down
+            cam_speed_y = -s_y * meter_px;
+
+            float down = cam_position_y + window_size[1] / 2;
+            if(down >= lot->getHeight()) cam_speed_y = 0;
+        }
+        else if(y > (window_division[3] - 100) && s_y > 0){ // moving up
+            cam_speed_y = -s_y * meter_px;
+
+            float up = cam_position_y - window_size[1] / 2;
+            if(up <= 0){
+                cam_speed_y = 0;
+            }
+        }
+        else cam_speed_y = 0;
+
+    }
+
+    void update_camera_position(float time) {
+        cam_position_x += cam_speed_x * time;
+        cam_position_y += cam_speed_y * time;
+    }
+
     void display() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        update_window_dimensions();
-        
+        // update_window_dimensions(); i forgot this doesnt even work
+        update_camera_speed();
+        float newtime = glutGet(GLUT_ELAPSED_TIME);
+        update_camera_position(newtime - ptime);
+
         for(GLUTCar* car : others){
+            car->forceSpeeds(-cam_speed_x, cam_speed_y);
+            car->update(newtime - ptime);
             car->show();
         }
-
-        float newtime = glutGet(GLUT_ELAPSED_TIME);
-        player->update(newtime - time);
+        
+        player->forceSpeeds(-cam_speed_x, cam_speed_y);
+        player->update(newtime - ptime);
         player->show();
 
         {
@@ -243,7 +324,7 @@ public:
             else player->returnColor();
         }
             
-        time = newtime;
+        ptime = newtime;
 
         extra_info();
 

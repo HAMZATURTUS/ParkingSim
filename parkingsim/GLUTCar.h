@@ -60,6 +60,8 @@ protected:
     float max_deceleration_force = 9000;    // the reference literally states "ill assume a constant force" and no car manufacturer wants to give me their numbers so take this
     float max_deceleration = 6.0;
 
+    float add_speed_x = 0; // this is for the camera. it will be in px/s
+    float add_speed_y = 0;
 
     bool brakes_on = false;
     bool lights_on = false;
@@ -113,6 +115,14 @@ public:
     float getSpeed() {
         return speed;
     }
+    void getSpeeds(float& speedx, float& speedy){
+        speedx = speed * std::sin(angle * M_PI / 180);
+        speedy = speed * std::cos(angle * M_PI / 180);
+    }
+    void forceSpeeds(float speedx, float speedy) { // this is for the camera stuff
+        add_speed_x = speedx;
+        add_speed_y = speedy;
+    }
 
     float getFriction() {
         return calculate_friction_force();
@@ -124,6 +134,18 @@ public:
 
     float getMeterpx() {
         return meter_px;
+    }
+
+    float getAngle() {
+        return angle;
+    }
+
+    void getPosition(float& x, float& y) {
+        x = position_fl[0]; y = position_fl[1];
+    }
+
+    std::string getPosition() {
+        return std::to_string(position_fl[0]) + " " + std::to_string(position_fl[1]);
     }
 
     void set_window_measuremeants(float windshield_start, float windshield_length, float rear_window_start, float rear_window_length) {
@@ -569,17 +591,12 @@ public:
         float addx = -dist * std::sin(angle * M_PI / 180);
         float addy = dist * std::cos(angle * M_PI / 180);
 
+        addx += add_speed_x * time;
+        addy += add_speed_y * time;
+
         position_fl[0] += addx;
         position_fl[1] += addy;
 
-    }
-
-    float getAngle() {
-        return angle;
-    }
-
-    std::string getPosition() {
-        return std::to_string(position_fl[0]) + " " + std::to_string(position_fl[1]);
     }
 
     void getCorners(float corners[4][2]) {
