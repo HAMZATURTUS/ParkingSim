@@ -17,8 +17,8 @@ private:
     float width = 100;              // meters
     float height = 100;
 
-    float starting_position_x = 50; // where should the center of the screen be relative to the map
-    float starting_position_y = 50; // also meters
+    float starting_position_x = 0; // where should the center of the screen be relative to the map
+    float starting_position_y = 0; // also meters
 
 public:
     ParkingLot() {

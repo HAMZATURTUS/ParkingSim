@@ -205,7 +205,7 @@ public:
                 "U to change car color",
                 "H to hide info"
             };
-            float start = 450, startx = window_division[0] + 50;
+            float start = window_division[3] - 50, startx = window_division[0] + 50;
             for(std::string& message : messages){
                 outputHandler->output(startx, start, message);
                 start -= 30;
@@ -218,7 +218,7 @@ public:
             player->getSpeeds(s_x, s_y);
             std::string divisions = "";
             for(auto division : window_division){ divisions += std::to_string(division) + " "; }
-            std::string infos[9] = {
+            std::string infos[10] = {
                 "position " + (player->getPosition()),
                 "angle " + std::to_string(player->getAngle()),
                 "speed " + std::to_string(player->getSpeed()) + "m/s " + std::to_string(player->getSpeed() * 3.6) + "km/h",
@@ -227,7 +227,8 @@ public:
                 "length, width " + std::to_string(window_size[0]) + " " + std::to_string(window_size[1]),
                 "s_x, s_y " + std::to_string(s_x) + ", " + std::to_string(s_y),
                 "window divisions " + divisions,
-                "position " + std::to_string(y),
+                "position " + std::to_string(x) + " " + std::to_string(y),
+                "cam position " + std::to_string(cam_position_x) + " " + std::to_string(cam_position_y),
             };
             for(std::string& info : infos){
                 outputHandler->output(startx, start, info);
@@ -256,30 +257,30 @@ public:
         if(x < (window_division[0] + 300) && s_x > 0){  // moving left
             cam_speed_x = -s_x * meter_px;
 
-            float left = cam_position_x - window_size[0] / 2;
-            if(left <= 0) cam_speed_x = 0;
+            //float left = cam_position_x - window_size[0] / 2;
+            //if(left <= 0) cam_speed_x = 0;
         }
         else if(x > (window_division[1] - 300) && s_x < 0){ // moving right
             cam_speed_x = -s_x * meter_px;
 
-            float right = cam_position_x + window_size[0] / 2;
-            if(right >= lot->getWidth()) cam_speed_x = 0;
+            //float right = cam_position_x + window_size[0] / 2;
+            //if(right >= lot->getWidth()) cam_speed_x = 0;
         }
         else cam_speed_x = 0;
 
         if(y < (window_division[2] + 200) && s_y < 0) { // moving down
             cam_speed_y = -s_y * meter_px;
 
-            float down = cam_position_y + window_size[1] / 2;
-            if(down >= lot->getHeight()) cam_speed_y = 0;
+            //float down = cam_position_y + window_size[1] / 2;
+            //if(down >= lot->getHeight()) cam_speed_y = 0;
         }
         else if(y > (window_division[3] - 100) && s_y > 0){ // moving up
             cam_speed_y = -s_y * meter_px;
 
-            float up = cam_position_y - window_size[1] / 2;
-            if(up <= 0){
-                cam_speed_y = 0;
-            }
+            //float up = cam_position_y - window_size[1] / 2;
+            //if(up <= 0){
+            //    cam_speed_y = 0;
+            //}
         }
         else cam_speed_y = 0;
 
@@ -289,6 +290,13 @@ public:
         time /= 1000;
         cam_position_x += cam_speed_x * time;
         cam_position_y += cam_speed_y * time;
+
+        window_division[0] = cam_position_x - window_size[0] / 2;
+        window_division[1] = cam_position_x + window_size[0] / 2;
+        window_division[2] = -cam_position_y - window_size[1] / 2;
+        window_division[3] = -cam_position_y + window_size[1] / 2;
+
+        glTranslatef(-cam_position_x, cam_position_y, 0.0f);
     }
 
     void display() {
@@ -303,12 +311,12 @@ public:
         update_camera_position(newtime - ptime);
 
         for(GLUTCar* car : others){
-            car->forceSpeeds(-cam_speed_x, cam_speed_y);
+            //car->forceSpeeds(-cam_speed_x, cam_speed_y);
             car->update(newtime - ptime);
             car->show();
         }
         
-        player->forceSpeeds(-cam_speed_x, cam_speed_y);
+        //player->forceSpeeds(-cam_speed_x, cam_speed_y);
         player->update(newtime - ptime);
         player->show();
 
