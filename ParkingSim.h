@@ -126,6 +126,7 @@ public:
     void parkinglot_setup() {
         this->lot = new ParkingLot();
         lot->getStartingPosition(cam_position_x, cam_position_y);
+        update_window_divisions();
     }
 
     void meterpx_setup() {
@@ -237,13 +238,11 @@ public:
         }
     }
 
-    void update_window_dimensions() {
-        this->window_size[0] = glutGet(GLUT_WINDOW_WIDTH);
-        this->window_size[1] = glutGet(GLUT_SCREEN_HEIGHT);
-
-        window_division[0] = -window_size[0] / 2; window_division[1] = window_size[0] / 2; window_division[2] = -window_size[1] / 2; window_division[3] = window_size[1] / 2;
-        //gluOrtho2D(window_division[0], window_division[1], window_division[2], window_division[3]);
-
+    void update_window_divisions() {
+        window_division[0] = cam_position_x - window_size[0] / 2;
+        window_division[1] = cam_position_x + window_size[0] / 2;
+        window_division[2] = -cam_position_y - window_size[1] / 2;
+        window_division[3] = -cam_position_y + window_size[1] / 2;
     }
 
     void update_camera_speed() {
@@ -291,10 +290,7 @@ public:
         cam_position_x += cam_speed_x * time;
         cam_position_y += cam_speed_y * time;
 
-        window_division[0] = cam_position_x - window_size[0] / 2;
-        window_division[1] = cam_position_x + window_size[0] / 2;
-        window_division[2] = -cam_position_y - window_size[1] / 2;
-        window_division[3] = -cam_position_y + window_size[1] / 2;
+        update_window_divisions();
 
         glTranslatef(-cam_position_x, cam_position_y, 0.0f);
     }
