@@ -460,7 +460,7 @@ public:
 
     void steer() {
 
-        float ret = abs(speed / 30);
+        float ret = abs(speed / 200);
         if (speed != 0){
             if(tyre_angle > 1){
                 tyre_angle -= ret;
@@ -473,7 +473,7 @@ public:
     }
 
     void steer(float x){
-        tyre_angle += -0.5 * x;
+        tyre_angle += -0.1 * x;
 
         if(tyre_angle > 0){
             tyre_angle = std::min(max_tyre_angle, tyre_angle);

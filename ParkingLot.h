@@ -4,6 +4,8 @@
 #include <GL/glut.h>
 #include <cmath>
 
+#include <json.hpp>
+
 #include "GLUTCar.h"
 #include "GLUTSedan.h"
 
