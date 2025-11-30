@@ -119,6 +119,12 @@ public:
 
     }
 
+    ParkingSim(std::string file_name, int window_size_x = 1600, int window_size_y = 1000){
+
+        parkinglot_setup(file_name);
+
+    }
+
     ~ParkingSim() {
         for(GLUTCar* car : others) delete car;
         delete player;
@@ -127,6 +133,12 @@ public:
 
     void parkinglot_setup() {
         this->lot = new ParkingLot();
+        lot->getStartingPosition(cam_position_x, cam_position_y);
+        update_window_divisions();
+    }
+
+    void parkinglot_setup(std::string file_name){
+        this->lot = new ParkingLot(file_name);
         lot->getStartingPosition(cam_position_x, cam_position_y);
         update_window_divisions();
     }
@@ -152,6 +164,8 @@ public:
 
         glutMainLoop();
     }
+
+    void load_map();
 
     void change_car() {
 

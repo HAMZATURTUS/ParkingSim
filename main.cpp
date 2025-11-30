@@ -13,10 +13,9 @@ ParkingSim* ParkingSim::currentInstance = nullptr;
 int main (int argc, char** argv) {
     
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
     
-    sim = new ParkingSim(1600, 1000);
-    sim->test_field();
+    
+    sim = new ParkingSim("map/firstParkingLot.json");
     
     return 0;
 }

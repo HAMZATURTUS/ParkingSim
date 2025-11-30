@@ -52,11 +52,15 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"ParkingLotTiles.tsx"
+         "source":"map/parkingLotTiles.png",
+         "width":800,
+         "height":400
         }, 
         {
          "firstgid":129,
-         "source":"sideparking.tsx"
+         "source":"map/sidespots.png",
+         "width":200,
+         "height":100
         }],
  "tilewidth":50,
  "type":"map",
