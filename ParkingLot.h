@@ -178,7 +178,7 @@ public:
 
     void drawMap(int x, int y){
 
-        for(int i = 0; i < 2; i++){
+        for(int i = 0; i < height_tiles; i++){
             for(int j = 0; j < width_tiles; j++){
                 int idx = tile_ids[i][j];
                 int xx = x + j * tile_width;
