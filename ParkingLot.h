@@ -170,7 +170,7 @@ public:
             for(int j = 0; j < tile_width; j++){
                 colorcode cc = tiles[tileId][i][j];
                 glColor3ub(cc.r, cc.g, cc.b);
-                glRectf(y + i,  x + j, y + i + 1, x + j + 1); 
+                glRectf(x + j,  y + i, x + j + 1, y + i + 1); 
             }
         }
 
