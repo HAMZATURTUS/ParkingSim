@@ -99,6 +99,8 @@ public:
 
         glutInitWindowSize(this->window_size[0], this->window_size[1]);
         glutInitWindowPosition(0, 0);
+
+        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);  // This stops flickering
         
         glutCreateWindow("OpenGL testing");
         myInit();
@@ -333,7 +335,7 @@ public:
 
         extra_info();
 
-        glFlush();
+        glutSwapBuffers();
     }
 
     void myInit() {
