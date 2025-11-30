@@ -40,8 +40,8 @@ private:
     float ptime = 0;
     float fl[2] = {0.0, 0.0};
     GLUTCar* player = new GLUTSedan(fl);
-    GLUTCar* others[16];
-    int others_len = sizeof(others) / sizeof(others[0]);
+    std::vector<GLUTCar*> others;
+    int others_len;
 
     // text output
     GLUTOutput* outputHandler = nullptr;
@@ -123,6 +123,38 @@ public:
 
         parkinglot_setup(file_name);
 
+        meterpx_setup();
+
+        std::srand(static_cast<unsigned>(std::time(nullptr))); // need to do this otherwise random generates the exact same stuff each time
+
+        currentInstance = this;
+        
+        int window_size[2] = {window_size_x, window_size_y};
+        for(int i = 0; i < 2; i++){
+            this->window_size[i] = window_size[i];
+        }
+
+        window_division[0] = -window_size[0] / 2; window_division[1] = window_size[0] / 2; window_division[2] = -window_size[1] / 2; window_division[3] = window_size[1] / 2;
+
+        glutInitWindowSize(this->window_size[0], this->window_size[1]);
+        glutInitWindowPosition(0, 0);
+
+        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);  // This stops flickering
+        
+        glutCreateWindow("OpenGL testing");
+        myInit();
+
+        outputHandler = new GLUTOutput(6);
+
+        glutDisplayFunc(displayCallback);
+        glutIdleFunc(keyboardUpdateCallback); 
+        //glutKeyboardFunc(handleKeyboard);
+
+        glutKeyboardFunc(keyDownCallback);
+        glutKeyboardUpFunc(keyUpCallback);
+
+        //glutMainLoop();
+
     }
 
     ~ParkingSim() {
@@ -156,6 +188,9 @@ public:
 
     void test_field() {
 
+        others.resize(16);
+        others_len = 16;
+
         float fl[2] = {-70.0f * others_len / 2, -200};
         for(int i = 0; i < others_len; i++){
             others[i] = create_random(rand() % 5, fl);
@@ -163,6 +198,12 @@ public:
         }
 
         glutMainLoop();
+    }
+
+    void first_lot(){
+
+        glutMainLoop();
+        
     }
 
     void load_map();
@@ -317,10 +358,13 @@ public:
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+        
         // update_window_dimensions(); i forgot this doesnt even work
         update_camera_speed();
         float newtime = glutGet(GLUT_ELAPSED_TIME);
         update_camera_position(newtime - ptime);
+
+        lot->drawMap(200, 200);
 
         for(GLUTCar* car : others){
             //car->forceSpeeds(-cam_speed_x, cam_speed_y);
@@ -328,6 +372,8 @@ public:
             car->show();
         }
         
+
+
         //player->forceSpeeds(-cam_speed_x, cam_speed_y);
         player->update(newtime - ptime);
         player->show();
