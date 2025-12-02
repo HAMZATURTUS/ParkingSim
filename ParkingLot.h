@@ -65,6 +65,8 @@ private:
     int map_pixel_w = 0;
     int map_pixel_h = 0;
 
+    GLuint tex;
+
 public:
     ParkingLot() {
         
@@ -149,7 +151,6 @@ public:
                     for(int k = 0; k < this->tile_height; k++){
                         for(int l = 0; l < this->tile_width; l++){
                             getColorAtPixel(image, j + l, ii + k, img_w, vect[k][l][0], vect[k][l][1], vect[k][l][2]);
-                            
                         }
                     }
 
@@ -162,6 +163,41 @@ public:
 
 
 
+
+
+    }
+
+    void initMap() {
+        //create test checker image (now RGB: 8x8x3 = 192 bytes)
+        unsigned char texDat[192];  // Increased size for RGB (3 channels)
+        for (int i = 0; i < 64; ++i) {  // Loop over 64 pixels
+            int baseIdx = i * 3;  // Base index for this pixel's RGB
+            if (((i + (i / 8)) % 2) == 0) {
+                // Red for even checker squares
+                texDat[baseIdx] = 255;     // R
+                texDat[baseIdx + 1] = 0;   // G
+                texDat[baseIdx + 2] = 0;   // B
+            } else {
+                // Blue for odd checker squares (modify these values for different colors)
+                texDat[baseIdx] = 0;       // R
+                texDat[baseIdx + 1] = 0;   // G
+                texDat[baseIdx + 2] = 255; // B
+            }
+        }
+        
+        //upload to GPU texture (changed to GL_RGB)
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, texDat);  // Use GL_RGB
+
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) {
+            std::cerr << "Texture upload error: " << gluErrorString(err) << std::endl;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void drawTileAt(int tileId, int x, int y){
@@ -169,8 +205,8 @@ public:
         glBegin(GL_POINTS);
         for(int i = 0; i < tile_height; i++){
             for(int j = 0; j < tile_width; j++){
-                glColor3ub(tiles[tileId][i][j][0], tiles[tileId][i][j][1], tiles[tileId][i][j][2]);
-                
+                auto tile = &tiles[tileId][i][j];
+                glColor3ub((*tile)[0], (*tile)[1], (*tile)[2]);
                 glVertex2i(x + j, y - i);
                 
             }
@@ -178,7 +214,7 @@ public:
         glEnd();
     }
 
-    void drawMap(int x, int y){
+    void drawMap1(int x, int y){
 
         for(int i = 0; i < 5; i++){
             for(int j = 0; j < 5; j++){
@@ -188,6 +224,28 @@ public:
                 
                 drawTileAt(idx, xx, yy);
             }
+        }
+
+    }
+
+    void drawMap(int x, int y){
+
+        
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glEnable(GL_TEXTURE_2D);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_QUADS);
+        glTexCoord2i(0, 0); glVertex2i(x, y);
+        glTexCoord2i(0, 1); glVertex2i(x, y - 800);
+        glTexCoord2i(1, 1); glVertex2i(x + 800, y - 800);
+        glTexCoord2i(1, 0); glVertex2i(x + 800, y);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR) {
+            std::cerr << "Texture upload error: " << gluErrorString(err) << std::endl;
         }
 
     }

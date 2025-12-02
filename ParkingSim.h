@@ -100,7 +100,7 @@ public:
         glutInitWindowSize(this->window_size[0], this->window_size[1]);
         glutInitWindowPosition(0, 0);
 
-        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);  // This stops flickering
+        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  // This stops flickering
         
         glutCreateWindow("OpenGL testing");
         myInit();
@@ -142,7 +142,10 @@ public:
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);  // This stops flickering
         
         glutCreateWindow("OpenGL testing");
+        lot->initMap();
+
         myInit();
+
 
         outputHandler = new GLUTOutput(6);
 
@@ -410,7 +413,8 @@ public:
         glLoadIdentity();
         
         // setting window dimension in X- and Y- direction (divides the screen into these coordinates)
-        gluOrtho2D(window_division[0], window_division[1], window_division[2], window_division[3]);
+        //gluOrtho2D(window_division[0], window_division[1], window_division[2], window_division[3]);
+        glOrtho(window_division[0], window_division[1], window_division[2], window_division[3], -1, 1);
     }
 
 
