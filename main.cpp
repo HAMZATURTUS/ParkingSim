@@ -18,6 +18,6 @@ int main (int argc, char** argv) {
     sim = new ParkingSim("map/firstParkingLot.json");
 
     sim->first_lot();
-    
+
     return 0;
 }

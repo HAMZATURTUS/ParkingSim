@@ -39,11 +39,11 @@ private:
     
     float meter_px;
 
-    float width = 100;              // meters
-    float height = 100;
+    float width ;              // px
+    float height;
 
     float starting_position_x = 0; // where should the center of the screen be relative to the map
-    float starting_position_y = 0; // also meters
+    float starting_position_y = 0; 
 
     //json info
     bool infinite;
@@ -53,6 +53,9 @@ private:
 
     int tile_height; // height of one tile in px
     int tile_width;
+
+    int drawtile_height = 65;
+    int drawtile_width = 65;
 
     int number_of_tilesets;
     std::vector<tileset> tilesets; // {starting number, name of tileset file}
@@ -76,6 +79,7 @@ public:
         meter_px = stabilizer->getMeterpx();
         delete stabilizer;
         delete fl;
+
 
     }
 
@@ -163,16 +167,18 @@ public:
 
 
 
+        width = drawtile_width * width_tiles;
+        height = drawtile_height * height_tiles;
 
 
     }
 
     void initMap() {
         //create test checker image (now RGB: 8x8x3 = 192 bytes)
-        unsigned char texDat[192];  // Increased size for RGB (3 channels)
-        for (int i = 0; i < 64; ++i) {  // Loop over 64 pixels
+        unsigned char texDat[height_tiles * width_tiles * 3 * tile_height * tile_width];  // Increased size for RGB (3 channels)
+        for (int i = 0; i < height_tiles * width_tiles * tile_height * tile_width; ++i) {  // Loop over 64 pixels
             int baseIdx = i * 3;  // Base index for this pixel's RGB
-            if (((i + (i / 8)) % 2) == 0) {
+            if ((i % 2) == 0) {
                 // Red for even checker squares
                 texDat[baseIdx] = 255;     // R
                 texDat[baseIdx + 1] = 0;   // G
@@ -183,6 +189,9 @@ public:
                 texDat[baseIdx + 1] = 0;   // G
                 texDat[baseIdx + 2] = 255; // B
             }
+
+            
+
         }
         
         //upload to GPU texture (changed to GL_RGB)
@@ -190,7 +199,7 @@ public:
         glBindTexture(GL_TEXTURE_2D, tex);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 8, 8, 0, GL_RGB, GL_UNSIGNED_BYTE, texDat);  // Use GL_RGB
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_tiles * tile_width, height_tiles * tile_height, 0, GL_RGB, GL_UNSIGNED_BYTE, texDat);  // Use GL_RGB
 
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
@@ -230,15 +239,17 @@ public:
 
     void drawMap(int x, int y){
 
+        int offsety = drawtile_height * height_tiles;
+        int offsetx = drawtile_width * width_tiles;
         
         glBindTexture(GL_TEXTURE_2D, tex);
         glEnable(GL_TEXTURE_2D);
         glColor3f(1.0f, 1.0f, 1.0f);
         glBegin(GL_QUADS);
         glTexCoord2i(0, 0); glVertex2i(x, y);
-        glTexCoord2i(0, 1); glVertex2i(x, y - 800);
-        glTexCoord2i(1, 1); glVertex2i(x + 800, y - 800);
-        glTexCoord2i(1, 0); glVertex2i(x + 800, y);
+        glTexCoord2i(0, 1); glVertex2i(x, y - offsety);
+        glTexCoord2i(1, 1); glVertex2i(x + offsetx, y - offsety);
+        glTexCoord2i(1, 0); glVertex2i(x + offsetx, y);
         glEnd();
         glDisable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -250,12 +261,12 @@ public:
 
     }
 
-    float getWidth() { return width * meter_px; }
-    float getHeight() { return height * meter_px; }
+    float getWidth() { return width; }
+    float getHeight() { return height; }
 
     void getStartingPosition(float& x, float& y) {
-        x = starting_position_x * meter_px;
-        y = starting_position_y * meter_px;
+        x = starting_position_x;
+        y = starting_position_y;
     }
     
     

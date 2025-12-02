@@ -31,14 +31,15 @@ private:
 
     // window stuff
     int window_size[2] = {1600, 1000}; // [x, y]
-    int window_division[4] = {-window_size[0] / 2, window_size[0] / 2, -window_size[1] / 2, window_size[1] / 2};
+    //int window_division[4] = {-window_size[0] / 2, window_size[0] / 2, -window_size[1] / 2, window_size[1] / 2};
+    int window_division[4] = {0, window_size[0], 0, window_size[1]};
     bool text_hidden = false;
 
 
     // car stuff
     int car_choice = 0, color_choice = 0, car_choices = 5, color_choices = 4;
     float ptime = 0;
-    float fl[2] = {0.0, 0.0};
+    float fl[2] = {float(window_division[0] + window_division[1]) / 2, float(window_division[2] + window_division[3]) / 2};
     GLUTCar* player = new GLUTSedan(fl);
     std::vector<GLUTCar*> others;
     int others_len;
@@ -96,7 +97,7 @@ public:
         }
 
         window_division[0] = -window_size[0] / 2; window_division[1] = window_size[0] / 2; window_division[2] = -window_size[1] / 2; window_division[3] = window_size[1] / 2;
-
+        
         glutInitWindowSize(this->window_size[0], this->window_size[1]);
         glutInitWindowPosition(0, 0);
 
@@ -134,7 +135,7 @@ public:
             this->window_size[i] = window_size[i];
         }
 
-        window_division[0] = -window_size[0] / 2; window_division[1] = window_size[0] / 2; window_division[2] = -window_size[1] / 2; window_division[3] = window_size[1] / 2;
+        window_division[0] = 0; window_division[1] = window_size[0]; window_division[2] = 0; window_division[3] = window_size[1];
 
         glutInitWindowSize(this->window_size[0], this->window_size[1]);
         glutInitWindowPosition(0, 0);
@@ -279,7 +280,7 @@ public:
             player->getSpeeds(s_x, s_y);
             std::string divisions = "";
             for(auto division : window_division){ divisions += std::to_string(division) + " "; }
-            std::string infos[10] = {
+            std::string infos[11] = {
                 "position " + (player->getPosition()),
                 "angle " + std::to_string(player->getAngle()),
                 "speed " + std::to_string(player->getSpeed()) + "m/s " + std::to_string(player->getSpeed() * 3.6) + "km/h",
@@ -290,6 +291,7 @@ public:
                 "window divisions " + divisions,
                 "position " + std::to_string(x) + " " + std::to_string(y),
                 "cam position " + std::to_string(cam_position_x) + " " + std::to_string(cam_position_y),
+                "lot dimensions " + std::to_string(lot->getWidth()) + " " + std::to_string(lot->getHeight()),
             };
             for(std::string& info : infos){
                 outputHandler->output(startx, start, info);
@@ -299,13 +301,15 @@ public:
     }
 
     void update_window_divisions() {
-        window_division[0] = cam_position_x - window_size[0] / 2;
-        window_division[1] = cam_position_x + window_size[0] / 2;
-        window_division[2] = -cam_position_y - window_size[1] / 2;
-        window_division[3] = -cam_position_y + window_size[1] / 2;
+        window_division[0] = cam_position_x;
+        window_division[1] = cam_position_x + window_size[0];
+        window_division[2] = -cam_position_y;
+        window_division[3] = -cam_position_y + window_size[1];
     }
 
     void update_camera_speed() {
+
+
         float x, y;
         player->getPosition(x, y);
 
@@ -316,30 +320,39 @@ public:
         if(x < (window_division[0] + 300) && s_x > 0){  // moving left
             cam_speed_x = -s_x * meter_px;
 
-            //float left = cam_position_x - window_size[0] / 2;
-            //if(left <= 0) cam_speed_x = 0;
+            if(cam_position_x <= 0){
+                cam_position_x = 0;
+                cam_speed_x = 0;
+            }
+
         }
         else if(x > (window_division[1] - 300) && s_x < 0){ // moving right
             cam_speed_x = -s_x * meter_px;
 
-            //float right = cam_position_x + window_size[0] / 2;
-            //if(right >= lot->getWidth()) cam_speed_x = 0;
+            if(cam_position_x >= (lot->getWidth() - window_size[0])){
+                cam_position_x = lot->getWidth() - window_size[0];
+                cam_speed_x = 0;
+            }
+            
         }
         else cam_speed_x = 0;
 
         if(y < (window_division[2] + 200) && s_y < 0) { // moving down
             cam_speed_y = -s_y * meter_px;
 
-            //float down = cam_position_y + window_size[1] / 2;
-            //if(down >= lot->getHeight()) cam_speed_y = 0;
+            if(cam_position_y >= (lot->getHeight() - window_size[1])){
+                cam_position_y = lot->getHeight() - window_size[1];
+                cam_speed_y = 0;
+            }
+
         }
         else if(y > (window_division[3] - 100) && s_y > 0){ // moving up
             cam_speed_y = -s_y * meter_px;
 
-            //float up = cam_position_y - window_size[1] / 2;
-            //if(up <= 0){
-            //    cam_speed_y = 0;
-            //}
+            if(cam_position_y <= 0){
+                cam_position_y = 0;
+                cam_speed_y = 0;
+            }
         }
         else cam_speed_y = 0;
 
@@ -367,7 +380,7 @@ public:
         float newtime = glutGet(GLUT_ELAPSED_TIME);
         update_camera_position(newtime - ptime);
 
-        lot->drawMap(0, 0);
+        lot->drawMap(0, window_size[1]);
 
         for(GLUTCar* car : others){
             //car->forceSpeeds(-cam_speed_x, cam_speed_y);
