@@ -59,7 +59,7 @@ private:
 
     std::vector<std::vector<int>> tile_ids;
 
-    std::vector<std::vector<std::vector<colorcode>>> tiles;
+    std::vector<std::vector<std::vector<std::vector<int>>>> tiles;
 
     GLuint full_map_texture = 0;   // one big texture for the whole map
     int map_pixel_w = 0;
@@ -94,17 +94,16 @@ public:
         return (data != nullptr);
     }
 
-    colorcode getColorAtPixel(std::vector<unsigned char> image, int x, int y, int img_w){
+    void getColorAtPixel(std::vector<unsigned char> image, int x, int y, int img_w, int& r, int& g, int& b){
         colorcode ret;
         const size_t RGBA = 4;
 
         size_t index = RGBA * (y * img_w + x);
         
-        ret.r = image[index];
-        ret.g = image[index + 1];
-        ret.b = image[index + 2];
+        r = image[index];
+        g = image[index + 1];
+        b = image[index + 2];
 
-        return ret;
     }
     
     void extract_json_data(std::string file_name){
@@ -145,16 +144,17 @@ public:
             int idx = tilesets[i].starting_index;
             for(int ii = 0; ii < tilesets[i].height_px; ii += this->tile_height){
                 for(int j = 0; j < tilesets[i].width_px; j += this->tile_width){
-                    std::vector<std::vector<colorcode>> vect(this->tile_height, std::vector<colorcode>(this->tile_width));
+                    std::vector<std::vector<std::vector<int>>> vect(this->tile_height, std::vector<std::vector<int>>(this->tile_width, std::vector<int>(3)));
 
                     for(int k = 0; k < this->tile_height; k++){
                         for(int l = 0; l < this->tile_width; l++){
-                            colorcode cc = getColorAtPixel(image, j + l, ii + k, img_w);
-                            vect[k][l] = cc;
+                            getColorAtPixel(image, j + l, ii + k, img_w, vect[k][l][0], vect[k][l][1], vect[k][l][2]);
+                            
                         }
                     }
 
-                    tiles[idx++] = std::move(vect);
+                    swap(tiles[idx], vect);
+                    idx++;
                 }
             }
 
@@ -166,24 +166,26 @@ public:
 
     void drawTileAt(int tileId, int x, int y){
 
+        glBegin(GL_POINTS);
         for(int i = 0; i < tile_height; i++){
             for(int j = 0; j < tile_width; j++){
-                colorcode cc = tiles[tileId][i][j];
-                glColor3ub(cc.r, cc.g, cc.b);
-                glRectf(x + j,  y + i, x + j + 1, y + i + 1); 
+                glColor3ub(tiles[tileId][i][j][0], tiles[tileId][i][j][1], tiles[tileId][i][j][2]);
+                
+                glVertex2i(x + j, y - i);
+                
             }
         }
-
+        glEnd();
     }
 
     void drawMap(int x, int y){
 
-        for(int i = 0; i < height_tiles; i++){
-            for(int j = 0; j < width_tiles; j++){
+        for(int i = 0; i < 5; i++){
+            for(int j = 0; j < 5; j++){
                 int idx = tile_ids[i][j];
                 int xx = x + j * tile_width;
-                int yy = y + i * tile_height;
-                std::cout << xx << " " << yy << "\n";
+                int yy = y - i * tile_height;
+                
                 drawTileAt(idx, xx, yy);
             }
         }

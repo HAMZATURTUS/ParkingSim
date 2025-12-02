@@ -364,7 +364,7 @@ public:
         float newtime = glutGet(GLUT_ELAPSED_TIME);
         update_camera_position(newtime - ptime);
 
-        lot->drawMap(200, 200);
+        lot->drawMap(0, 0);
 
         for(GLUTCar* car : others){
             //car->forceSpeeds(-cam_speed_x, cam_speed_y);
