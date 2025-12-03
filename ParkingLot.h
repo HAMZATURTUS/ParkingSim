@@ -62,7 +62,7 @@ private:
 
     std::vector<std::vector<int>> tile_ids;
 
-    std::vector<std::vector<std::vector<std::vector<int>>>> tiles;
+    std::vector<std::vector<std::vector<std::vector<unsigned char>>>> tiles;
 
     GLuint full_map_texture = 0;   // one big texture for the whole map
     int map_pixel_w = 0;
@@ -100,7 +100,7 @@ public:
         return (data != nullptr);
     }
 
-    void getColorAtPixel(std::vector<unsigned char> image, int x, int y, int img_w, int& r, int& g, int& b){
+    void getColorAtPixel(std::vector<unsigned char> image, int x, int y, int img_w, unsigned char& r, unsigned char& g, unsigned char& b){
         colorcode ret;
         const size_t RGBA = 4;
 
@@ -150,7 +150,7 @@ public:
             int idx = tilesets[i].starting_index;
             for(int ii = 0; ii < tilesets[i].height_px; ii += this->tile_height){
                 for(int j = 0; j < tilesets[i].width_px; j += this->tile_width){
-                    std::vector<std::vector<std::vector<int>>> vect(this->tile_height, std::vector<std::vector<int>>(this->tile_width, std::vector<int>(3)));
+                    std::vector<std::vector<std::vector<unsigned char>>> vect(this->tile_height, std::vector<std::vector<unsigned char>>(this->tile_width, std::vector<unsigned char>(3)));
 
                     for(int k = 0; k < this->tile_height; k++){
                         for(int l = 0; l < this->tile_width; l++){
