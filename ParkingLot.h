@@ -174,32 +174,53 @@ public:
     }
 
     void initMap() {
-        //create test checker image (now RGB: 8x8x3 = 192 bytes)
-        unsigned char texDat[height_tiles * width_tiles * 3 * tile_height * tile_width];  // Increased size for RGB (3 channels)
-        for (int i = 0; i < height_tiles * width_tiles * tile_height * tile_width; ++i) {  // Loop over 64 pixels
-            int baseIdx = i * 3;  // Base index for this pixel's RGB
+        
+        int n = height_tiles * width_tiles * tile_height * tile_width;
+        unsigned char texDat[n * 3]; 
+
+
+        /* test code to draw checkerboard
+        for (int i = 0; i < n; ++i) { 
+            int baseIdx = i * 3; 
             if ((i % 2) == 0) {
-                // Red for even checker squares
+                
                 texDat[baseIdx] = 255;     // R
                 texDat[baseIdx + 1] = 0;   // G
                 texDat[baseIdx + 2] = 0;   // B
             } else {
-                // Blue for odd checker squares (modify these values for different colors)
+                
                 texDat[baseIdx] = 0;       // R
                 texDat[baseIdx + 1] = 0;   // G
                 texDat[baseIdx + 2] = 255; // B
             }
 
-            
+        }
+        */
+
+        for(int i = 0; i < n; i++){
+
+            int y = i / (width_tiles * tile_width) / tile_width;
+            int x = (i % (width_tiles * tile_width)) / tile_width;
+
+            int tileid = tile_ids[y][x];
+
+            int yy = i / (width_tiles * tile_width) % tile_width;
+            int xx = (i % (width_tiles * tile_width)) % tile_width;
+
+            int baseIdx = i * 3;
+            for(int j = 0; j < 3; j++){
+                texDat[baseIdx + j] = tiles[tileid][yy][xx][j];
+            }
 
         }
         
-        //upload to GPU texture (changed to GL_RGB)
+        
+        
         glGenTextures(1, &tex);
         glBindTexture(GL_TEXTURE_2D, tex);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_tiles * tile_width, height_tiles * tile_height, 0, GL_RGB, GL_UNSIGNED_BYTE, texDat);  // Use GL_RGB
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_tiles * tile_width, height_tiles * tile_height, 0, GL_RGB, GL_UNSIGNED_BYTE, texDat); 
 
         GLenum err = glGetError();
         if (err != GL_NO_ERROR) {
